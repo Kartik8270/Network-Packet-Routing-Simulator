@@ -15,11 +15,19 @@ using namespace std;
 using json = nlohmann::json;
 #define int long long
 
+bool validNode(long long id, unordered_map<long long,string> &nodeName){
+    return nodeName.find(id) != nodeName.end();
+}
+
 void Prim(unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,long long wt,bool printEdges,unordered_map<long long, string> &nodeName){
+    if (adj.empty()) {
+        cout << "Graph is empty\n";
+        return;
+    }
     unordered_map<int,bool>visited;
     int start = adj.begin()->first;
     vector<tuple<int,int,int>>mst;
-    int weight = 0;
+    int totalCost = 0;
     priority_queue<pair<int,pair<int,int>>,vector<pair<int,pair<int,int>>>,greater<pair<int,pair<int,int>>>>pq;
     pq.push({0,{start,-1}});
     while(!pq.empty()){
@@ -30,38 +38,39 @@ void Prim(unordered_map<long long, vector<tuple<long long, long long, long long>
         if(!visited[node]){
             visited[node] = true;
             if(parent!=-1){
-                weight+=l;
+                totalCost+=l;
                 mst.push_back({node,parent,l});
             }
             for(auto &it:adj[node]){
                 long long neighbor = get<0>(it);
-                long long filterweight;
+                long long weight;
                 if(wt==1){
-                    filterweight = get<1>(it);
+                    weight = get<1>(it);
                 }
                 else{
-                    filterweight = get<2>(it);
+                    weight = get<2>(it);
                 }
                 if(!visited[neighbor]){
-                    pq.push({filterweight,{neighbor,node}});
+                    pq.push({weight,{neighbor,node}});
                 }
             }
         }
     }
     if (wt == 1) {
-        cout << "\nTotal MST latency: " << weight << " ms\n";
+        cout << "\nTotal MST latency: " << totalCost << " ms\n\n";
     } 
     else {
-        cout << "\nTotal MST cost: " << weight << " USD\n";
+        cout << "\nTotal MST cost: " << totalCost << " USD\n\n";
+    }
+    if (wt == 1){
+            cout << "\n--- Latency Optimized MST ---\n";
+        }
+    else{
+        cout << "\n--- Cost Optimized MST ---\n";
     }
 
     if (printEdges) {
-        if (wt == 1){
-            cout << "\n--- Latency Optimized MST ---\n";
-        }
-        else{
-            cout << "\n--- Cost Optimized MST ---\n";
-        }
+        
         unordered_map<long long, vector<tuple<long long,long long>>> mstAdj;
         for (auto &e : mst) {
             long long u = get<0>(e); // parent
@@ -253,6 +262,43 @@ void numDelete(int d,
     }
 }
 
+void deleteEdges(int d,
+    unordered_map<long long, vector<tuple<long long,long long,long long>>> &adj,
+    unordered_map<long long,string> &nodeName) {
+
+    for (int i = 0; i < d; i++) {
+        long long u, v;
+        cout << "Enter edge (from to): ";
+        cin >> u >> v;
+        if (nodeName.find(u) == nodeName.end() ||
+                    nodeName.find(v) == nodeName.end()) {
+                    cout << "Invalid nodes (one or both do not exist)\n";
+                    continue;
+                }
+
+        // remove v from u's list
+        if (adj.find(u) != adj.end()) {
+            auto &vec = adj[u];
+            vec.erase(remove_if(vec.begin(), vec.end(),
+                [v](auto &t) {
+                    return get<0>(t) == v;
+                }), vec.end());
+        }
+
+        // remove u from v's list
+        if (adj.find(v) != adj.end()) {
+            auto &vec = adj[v];
+            vec.erase(remove_if(vec.begin(), vec.end(),
+                [u](auto &t) {
+                    return get<0>(t) == u;
+                }), vec.end());
+        }
+
+        cout << "Edge between " << nodeName[u]
+             << " and " << nodeName[v] << " deleted\n";
+    }
+}
+
 int32_t main() {
 
     ifstream inFile("Data.json");
@@ -287,7 +333,7 @@ int32_t main() {
     cout << "loaded " << nodesSize << " nodes, " << edgesSize << " links\n";
 
     int n = 0;
-    while (n != 9) {
+    while (n != 12) {
         cout << "\n--- Menu ---\n";
         cout << "1. shortest path (one to one)\n";
         cout << "2. shortest path (one to all)\n";
@@ -311,6 +357,10 @@ int32_t main() {
                 int filter; cin >> filter;
                 cout << "source id: ";      long long from; cin >> from;
                 cout << "destination id: "; long long to;   cin >> to;
+                if (!validNode(from,nodeName) || !validNode(to,nodeName)) {
+                    cout << "Invalid source or destination\n";
+                    break;
+                }
                 shortestPathForOne(nodesSize, from, to, AdjacencyList, filter, nodeName);
                 break;
             }
@@ -319,6 +369,10 @@ int32_t main() {
                 cout << "filter (1=latency, 2=cost): ";
                 int filter2; cin >> filter2;
                 cout << "source id: "; int src; cin >> src;
+                if (!validNode(src,nodeName)) {
+                    cout << "Invalid source node\n";
+                    break;
+                }
                 unordered_map<long long, long long> dist = dijkstraForAll(nodesSize, AdjacencyList, src, filter2);
                 printDijkstraResult(dist, nodeName, src, filter2);
                 break;
@@ -336,6 +390,10 @@ int32_t main() {
                     cout << "to: ";      long long to;      cin >> to;
                     cout << "latency: "; long long latency; cin >> latency;
                     cout << "cost: ";    long long cost;    cin >> cost;
+                    if (!validNode(from,nodeName) || !validNode(to,nodeName)) {
+                        cout << "Invalid nodes\n";
+                        continue;
+                    }
                     AdjacencyList[from].push_back({to,   latency, cost});
                     AdjacencyList[to].push_back({from, latency, cost});
                 }
@@ -355,14 +413,17 @@ int32_t main() {
             }
 
             case 6: {
-                cout << "how many nodes to delete: "; int d; cin >> d;
+                cout << "how many nodes to delete: "; 
+                int d; cin >> d;
                 numDelete(d, AdjacencyList, nodeName);
                 break;
             }
 
             case 7: {
-                cout << "How many edges to delete\n";
-                
+                cout << "How many edges to delete: ";
+                int d;
+                cin >> d;
+                deleteEdges(d, AdjacencyList, nodeName);
                 break;
             }
 
@@ -383,8 +444,19 @@ int32_t main() {
                 Prim(AdjacencyList, wt, printEdges,nodeName);
                 break;
             }
-
-            case 9: {
+            case 9:{
+                //MST using Kruskal's Algo\n;
+                break;
+            }
+            case 10:{
+                //Kruskal vs Prim\n";
+                break;
+            }
+            case 11:{
+                //MST vs Djistra\n";
+                break;
+            }
+            case 12: {
                 cout << "bye\n";
                 break;
             }
