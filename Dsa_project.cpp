@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include<bits/stdc++.h>
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -10,239 +9,389 @@
 #include <queue>
 #include <set>
 #include <fstream>
+#include <unordered_map>
 #include "json.hpp"
 using namespace std;
 using json = nlohmann::json;
+#define int long long
 
-void display(int V, vector<tuple<long long , long long , long long , long long , bool>> &edges,map<long long,string> &nodeName){
-    vector<vector<pair<long,pair<long,long>>>>adj(V+1);
-    for(auto it: edges){
-        long long u = get<0>(it);
-        long long v = get<1>(it);
-        long long latency = get<2>(it);
-        long long cost = get<3>(it);
-        bool status = get<4>(it);
-        if(status){
-            adj[v].push_back({u,{latency,cost}});
-            adj[u].push_back({v,{latency,cost}});
+void Prim(unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,long long wt,bool printEdges,unordered_map<long long, string> &nodeName){
+    unordered_map<int,bool>visited;
+    int start = adj.begin()->first;
+    vector<tuple<int,int,int>>mst;
+    int weight = 0;
+    priority_queue<pair<int,pair<int,int>>,vector<pair<int,pair<int,int>>>,greater<pair<int,pair<int,int>>>>pq;
+    pq.push({0,{start,-1}});
+    while(!pq.empty()){
+        int l = pq.top().first;
+        int node = pq.top().second.first;
+        int parent = pq.top().second.second;
+        pq.pop();
+        if(!visited[node]){
+            visited[node] = true;
+            if(parent!=-1){
+                weight+=l;
+                mst.push_back({node,parent,l});
+            }
+            for(auto &it:adj[node]){
+                long long neighbor = get<0>(it);
+                long long filterweight;
+                if(wt==1){
+                    filterweight = get<1>(it);
+                }
+                else{
+                    filterweight = get<2>(it);
+                }
+                if(!visited[neighbor]){
+                    pq.push({filterweight,{neighbor,node}});
+                }
+            }
         }
     }
-        cout << "\n=========== NETWORK (ADJ LIST) ===========\n";
+    if (wt == 1) {
+        cout << "\nTotal MST latency: " << weight << " ms\n";
+    } 
+    else {
+        cout << "\nTotal MST cost: " << weight << " USD\n";
+    }
 
-    for(int i = 1; i <= V; i++){
+    if (printEdges) {
+        if (wt == 1){
+            cout << "\n--- Latency Optimized MST ---\n";
+        }
+        else{
+            cout << "\n--- Cost Optimized MST ---\n";
+        }
+        unordered_map<long long, vector<tuple<long long,long long>>> mstAdj;
+        for (auto &e : mst) {
+            long long u = get<0>(e); // parent
+            long long v = get<1>(e);  // node
+            int wei = get<2>(e);
 
-        cout << "\n" << nodeName[i] << ":\n";
+            mstAdj[u].push_back({v,wei});
+            mstAdj[v].push_back({u,wei});
+        }
+        cout << "\nMST Adjacency List (with city names):\n";
 
-        if(adj[i].empty()){
-            cout << "   No connections\n";
+        for (auto &y : mstAdj) {
+            cout << "\n[" << y.first << "] " << nodeName[y.first] << " :\n";
+
+            for (auto &x : y.second) {
+                long long nbr = get<0>(x);
+                long long w   = get<1>(x);
+
+                cout << "   -> [" << nbr << "] " << nodeName[nbr]
+                    << "  weight: " << w << "\n";
+            }
+        }
+    }
+}
+
+// display graph
+void display(int V, unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,
+             unordered_map<long long, string> &nodeName) {
+
+    cout << "\n--- Network Adjacency List ---\n";
+    for (auto &y : nodeName) {
+        long long node = y.first;
+        cout << "\n[" << node << "] " << y.second << " :\n";
+        if (adj.find(node) == adj.end() || adj[node].empty()) {
+            cout << "   no connections\n";
+            continue;
+        }
+        for (auto &x : adj[node]) {
+            long long neighbor = get<0>(x);
+            long long latency  = get<1>(x);
+            long long cost     = get<2>(x);
+            cout << "   -> [" << neighbor << "] " << nodeName[neighbor]
+                 << "  latency: " << latency << "ms"
+                 << "  cost: $" << cost << "\n";
+        }
+    }
+    cout << "\ntotal nodes: " << nodeName.size() << "\n";
+}
+
+// dijkstra from one source to all nodes
+unordered_map<long long, long long> dijkstraForAll(int V,
+    unordered_map<long long, vector<tuple<long long, long long, long long>>> &edges,
+    long long src, int filter) {
+
+    priority_queue<pair<long long, long long>,
+                   vector<pair<long long, long long>>,
+                   greater<pair<long long, long long>>> h;
+
+    unordered_map<long long, long long> dist;
+    dist[src] = 0;
+    h.push({0, src});
+
+    while (!h.empty()) {
+        long long len  = h.top().first;
+        long long node = h.top().second;
+        h.pop();
+
+        if (dist.find(node) != dist.end() && len > dist[node]) continue;
+        if (edges.find(node) == edges.end()) continue;
+
+        for (auto &x : edges[node]) {
+            long long v      = get<0>(x);
+            long long weight = (filter == 1) ? get<1>(x) : get<2>(x);
+            if (dist.find(v) == dist.end() || len + weight < dist[v]) {
+                dist[v] = len + weight;
+                h.push({dist[v], v});
+            }
+        }
+    }
+    return dist;
+}
+
+// print dijkstra results
+void printDijkstraResult(unordered_map<long long, long long> &dist,
+                         unordered_map<long long, string> &nodeName,
+                         long long src, int filter) {
+    cout << "\nRouting table from [" << src << "] " << nodeName[src] << "\n";
+    cout << "filter: " << (filter == 1 ? "latency" : "cost") << "\n";
+    cout << "--------------------------------------------\n";
+    for (auto &y : nodeName) {
+        long long id = y.first;
+        if (id == src) continue;
+        cout << "[" << id << "] " << y.second << " : ";
+        if (dist.find(id) == dist.end())
+            cout << "unreachable\n";
+        else
+            cout << dist[id] << (filter == 1 ? " ms" : " USD") << "\n";
+    }
+    cout << "--------------------------------------------\n";
+}
+
+// shortest path from source to one destination
+void shortestPathForOne(int V, long long from, long long to,
+    unordered_map<long long, vector<tuple<long long, long long, long long>>> &edges,
+    int filter, unordered_map<long long, string> &nodeName) {
+
+    priority_queue<pair<long long, long long>,
+                   vector<pair<long long, long long>>,
+                   greater<pair<long long, long long>>> h;
+
+    unordered_map<long long, long long> dist;
+    unordered_map<long long, long long> parent;
+    dist[from]   = 0;
+    parent[from] = -1;
+    h.push({0, from});
+
+    while (!h.empty()) {
+        long long len  = h.top().first;
+        long long node = h.top().second;
+        h.pop();
+
+        if (len > dist[node]) continue;
+        if (edges.find(node) == edges.end()) continue;
+
+        for (auto &x : edges[node]) {
+            long long weight   = (filter == 1) ? get<1>(x) : get<2>(x);
+            long long neighbor = get<0>(x);
+            if (dist.find(neighbor) == dist.end() || len + weight < dist[neighbor]) {
+                parent[neighbor] = node;
+                dist[neighbor]   = len + weight;
+                h.push({dist[neighbor], neighbor});
+            }
+        }
+    }
+
+    if (dist.find(to) == dist.end()) {
+        cout << "no path found\n";
+        return;
+    }
+
+    vector<long long> path;
+    long long b = to;
+    while (b != -1) {
+        path.push_back(b);
+        b = parent[b];
+    }
+    reverse(path.begin(), path.end());
+
+    cout << "\npath: ";
+    for (int i = 0; i < path.size(); i++) {
+        cout << nodeName[path[i]];
+        if (i + 1 < path.size()) cout << " -> ";
+    }
+    cout << "\nhops : " << path.size() - 1;
+    cout << "\ntotal " << (filter == 1 ? "latency: " : "cost: $") << dist[to]
+         << (filter == 1 ? " ms" : "") << "\n";
+}
+
+// delete a node and its edges
+void numDelete(int d,
+    unordered_map<long long, vector<tuple<long long, long long, long long>>> &edges,
+    unordered_map<long long, string> &nodeName) {
+
+    for (int i = 0; i < d; i++) {
+        cout << "enter node id to delete: ";
+        long long id;
+        cin >> id;
+
+        if (nodeName.find(id) == nodeName.end()) {
+            cout << "node not found\n";
             continue;
         }
 
-        for(auto x : adj[i]){
-            int neighbor = x.first;
-            int latency = x.second.first;
-            int cost = x.second.second;
+        string name = nodeName[id];
+        nodeName.erase(id);
+        edges.erase(id);
 
-            cout << "   -> " << nodeName[neighbor]
-                 << " | Latency: " << latency << " ms"
-                 << " | Cost: " << cost << "\n";
+        for (auto &x : edges) {
+            auto &neighbors = x.second;
+            neighbors.erase(
+                remove_if(neighbors.begin(), neighbors.end(),
+                    [id](const tuple<long long, long long, long long> &edge) {
+                        return get<0>(edge) == id;
+                    }),
+                neighbors.end()
+            );
         }
+        cout << "node " << name << " deleted\n";
     }
-
-    cout << "\n=========================================\n";
-
 }
 
-// Dijkstra's Algorithm
- vector<long long> dijkstraForAll(int V, vector<tuple<long long , long long , long long , long long , bool>> &edges, long long src , int filter) {
-        // Code here
-         vector <vector <pair<long long , long long>>> vec(V + 1);
-         if(filter == 1){
-            for(int i = 0 ; i < edges.size() ; i++){
-                vec[get<0>(edges[i])].push_back({get<1>(edges[i]), get<2>(edges[i])});
-                vec[get<1>(edges[i])].push_back({get<0>(edges[i]), get<2>(edges[i])});
-            }
-        }
-        else if(filter == 2){
-             for(int i = 0 ; i < edges.size() ; i++){
-                vec[get<0>(edges[i])].push_back({get<1>(edges[i]), get<3>(edges[i])});
-                vec[get<1>(edges[i])].push_back({get<0>(edges[i]), get<3>(edges[i])});
-            }
-        }
-        priority_queue <pair<long long , long long> , vector<pair<long long , long long>> , greater<pair<long long , long long>>> h;
-        vector <long long> dist(V , LLONG_MAX);
-        dist[src] = 0;
-        h.push({0 , src});
-        while(!h.empty()){
-            long long node = h.top().second;
-            long long len = h.top().first;
-            h.pop();
-            if(len > dist[node]) continue;
-            for(auto x : vec[node]){
-                if(len + x.second < dist[x.first]){
-                    dist[x.first] = len + x.second;
-                    h.push({len + x.second , x.first});
-                }
-            }
-        }
-        for(int i = 0 ; i < V ; i++) if(dist[i] == LLONG_MAX) dist[i] = -1;
-        return dist;
-    }
-
-    // shortest path in undirected graph from 1 to n
-    void shortestPathForOne(long long from ,long long to, vector<tuple<long long , long long , long long ,long long , bool>>& edges , int filter) {
-        // Code here
-        vector <vector <pair<long long , long long>>> vec(to + 1);
-        for(long long i = 0 ; i < edges.size() ; i++){
-            long long start = get<0>(edges[i]);
-            long long end = get<1>(edges[i]);
-            long long latency = get<2>(edges[i]);
-            long long cost = get<3>(edges[i]);
-            bool status = get<4>(edges[i]);
-            if(filter == 1) vec[start].push_back({end , latency});
-            else vec[start].push_back({end , cost});
-        }
-        priority_queue <pair<long long , long long> , vector<pair<long long , long long>> , greater<pair<long long , long long>>> h;
-        vector<long long> dist(to + 1 , LLONG_MAX);
-        dist[from] = 0;
-        h.push({0 , from});
-        vector <long long> parent(to + 1);
-        for(long long i = 0 ; i <= to ; i++) parent[i] = i;
-        while(!h.empty()){
-            long long node = h.top().second;
-            long long len = h.top().first;
-            h.pop();
-            for(auto x : vec[node]){
-                if(len + x.second < dist[x.first]){
-                    parent[x.first] = node;
-                    dist[x.first] = len + x.second;
-                    h.push({len + x.second , x.first});
-                }
-            }
-        }
-        if(dist[to] == LLONG_MAX) cout << "No path exists" << endl;
-        vector <int> path;
-        int b = to;
-        while(parent[b] != b) {
-            path.push_back(b);
-            b = parent[b];
-        }
-        path.push_back(from);
-        reverse(path.begin() , path.end());
-        cout << "Shortest path from " << from << " to " << to << " is: ";
-        for(auto x : path) cout << x << " ";
-        cout << endl;
-    }
-int main(){
+int32_t main() {
 
     ifstream inFile("Data.json");
     if (!inFile.is_open()) {
-        cerr << "Error: Could not open file to read!" << endl;
+        cerr << "could not open Data.json\n";
         return 1;
     }
-
     json networkData;
-    inFile >> networkData; // Load all data into memory
+    inFile >> networkData;
     inFile.close();
+
     long long nodesSize = networkData["nodes"].size();
     long long edgesSize = networkData["links"].size();
-    int i = 0;
-    vector <pair <string , string>> Nodes(nodesSize + 1);
-    map<long long, string> nodeName;
-    for(auto &x : networkData["nodes"]){
-        string location = x["location"];
-        string ip = x["ip_prefix"];
-        Nodes[i] = {ip , location};
-        i++;
-    }
-    for(auto &x : networkData["nodes"]){
-        long long id = x["id"];
-        string location = x["location"];
+    unordered_map<long long, string> nodeName;
 
-        nodeName[id] = location;
+    for (auto &x : networkData["nodes"]) {
+        long long id    = x["id"];
+        string location = x["location"];
+        nodeName[id]    = location;
     }
-    vector<tuple<long long , long long , long long , long long , bool>> AdjacencyList;
-    for(int i = 0 ; i < edgesSize ; i++){
-        long long from = networkData["links"][i]["source"];
-        long long to   = networkData["links"][i]["target"];
 
+    unordered_map<long long, vector<tuple<long long, long long, long long>>> AdjacencyList;
+    for (int i = 0; i < edgesSize; i++) {
+        long long from    = networkData["links"][i]["source"];
+        long long to      = networkData["links"][i]["target"];
         long long latency = networkData["links"][i]["latency_ms"];
         long long cost    = networkData["links"][i]["cost_usd"];
-
-        bool status = (networkData["links"][i]["status"] == "active");
-
-        AdjacencyList.push_back({from , to , latency , cost , status});
+        AdjacencyList[from].push_back({to,   latency, cost});
+        AdjacencyList[to].push_back({from, latency, cost});
     }
-    
+
+    cout << "loaded " << nodesSize << " nodes, " << edgesSize << " links\n";
+
     int n = 0;
-    while(n != 7){
-        cout << "These are the following features enter your choice" << endl ;
-        cout << "1. Optimized path from 1 place to other" << endl;
-        cout << "2. Optimized path from one to all others" << endl;
-        cout << "3. display graph" << endl;
-        cout << "4. Add node" << endl;
-        cout << "5. Delete node" << endl; 
-        cout << "6. Display MST" << endl;
-        cout << "7. Exit" << endl;
+    while (n != 9) {
+        cout << "\n--- Menu ---\n";
+        cout << "1. shortest path (one to one)\n";
+        cout << "2. shortest path (one to all)\n";
+        cout << "3. display graph\n";
+        cout << "4. add edges\n";
+        cout << "5. add new node\n";
+        cout << "6. delete node\n";
+        cout << "7. Delete edges\n";
+        cout << "8. MST using Prim's Algo\n";
+        cout <<"9. MST using Kruskal's Algo\n";
+        cout<< "10. Kruskal vs Prim\n";
+        cout << "11. MST vs Djistra\n";
+        cout<< "12. exit\n";
+        cout << "choice: ";
         cin >> n;
-        switch(n){
-            case 1:
-                cout << "Which filter you want" << endl;
-                cout << "1. Latency" << endl;
-                cout << "2. Cost" << endl;
-                int filter;
-                cin >> filter;
-                if(filter == 1){
-                    cout << "Enter source and destination(start from 1)" << endl;
-                    int from , to;
-                    cin >> from >> to;
-                    shortestPathForOne(from , to , AdjacencyList , filter);
-                }
-                else if(filter == 2){
-                    cout << "Enter source and destination(start from 1)" << endl;
-                    int from , to;
-                    cin >> from >> to;
-                    shortestPathForOne(from , to , AdjacencyList , filter);
-                }
+
+        switch (n) {
+
+            case 1: {
+                cout << "filter (1=latency, 2=cost): ";
+                int filter; cin >> filter;
+                cout << "source id: ";      long long from; cin >> from;
+                cout << "destination id: "; long long to;   cin >> to;
+                shortestPathForOne(nodesSize, from, to, AdjacencyList, filter, nodeName);
                 break;
-            case 2:
-                cout << "Enter source(start from 1)" << endl;
-                cout << "Which filter you want" << endl;
-                cout << "1. Latency" << endl;
-                cout << "2. Cost" << endl;
-                int filter2;
-                cin >> filter2;
-                if(filter2 == 1){
-                    cout << "Enter source(start from 1)" << endl;
-                    int src;
-                    cin >> src;
-                    dijkstraForAll(nodesSize , AdjacencyList , src , filter2);
-                }
-                else if(filter2 == 2){
-                    cout << "Enter source(start from 1)" << endl;
-                    int src;
-                    cin >> src;
-                    dijkstraForAll(nodesSize + 1 , AdjacencyList , src , filter2);
-                }
+            }
+
+            case 2: {
+                cout << "filter (1=latency, 2=cost): ";
+                int filter2; cin >> filter2;
+                cout << "source id: "; int src; cin >> src;
+                unordered_map<long long, long long> dist = dijkstraForAll(nodesSize, AdjacencyList, src, filter2);
+                printDijkstraResult(dist, nodeName, src, filter2);
                 break;
-            case 3:
-                cout << "Display graph feature is under construction" << endl;
+            }
+
+            case 3: {
                 display(nodesSize, AdjacencyList, nodeName);
                 break;
-            case 4:
-                cout << "Add node feature is under construction" << endl;
+            }
+
+            case 4: {
+                cout << "how many edges: "; int m; cin >> m;
+                for (int i = 0; i < m; i++) {
+                    cout << "from: ";    long long from;    cin >> from;
+                    cout << "to: ";      long long to;      cin >> to;
+                    cout << "latency: "; long long latency; cin >> latency;
+                    cout << "cost: ";    long long cost;    cin >> cost;
+                    AdjacencyList[from].push_back({to,   latency, cost});
+                    AdjacencyList[to].push_back({from, latency, cost});
+                }
                 break;
-            case 5:
-                cout << "Delete node feature is under construction" << endl;
-                break; 
-            case 6:
-                cout << "Display MST feature is under construction" << endl;
-                break; 
-            case 7:
-                cout << "Exiting..." << endl;
-                break; 
+            }
+
+            case 5: {
+                cout << "how many nodes: "; int k; cin >> k;
+                for (int i = 0; i < k; i++) {
+                    cout << "id: ";       long long id;    cin >> id;
+                    cout << "location: "; string location; cin >> location;
+                    cout << "ip: ";       string ip;       cin >> ip;
+                    nodeName[id] = location;
+                    nodesSize++;
+                }
+                break;
+            }
+
+            case 6: {
+                cout << "how many nodes to delete: "; int d; cin >> d;
+                numDelete(d, AdjacencyList, nodeName);
+                break;
+            }
+
+            case 7: {
+                cout << "How many edges to delete\n";
+                
+                break;
+            }
+
+            case 8: {
+                long long wt;
+                int choice;
+
+                cout << "Press 1 for Latency optimized network\n";
+                cout << "Press 2 for Cost optimized network\n";
+                cin >> wt;
+
+                cout << "Press 1 to print Only total cost\n";
+                cout << "Press 2 to show full MST\n";
+                cin >> choice;
+
+                bool printEdges = (choice == 2);
+
+                Prim(AdjacencyList, wt, printEdges,nodeName);
+                break;
+            }
+
+            case 9: {
+                cout << "bye\n";
+                break;
+            }
+
+
             default:
-                cout << "Invalid choice" << endl; 
+                cout << "invalid choice\n";
         }
     }
 
