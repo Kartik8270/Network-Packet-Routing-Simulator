@@ -13,13 +13,13 @@ vector<tuple<long long, long long, long long>> Prim(
     unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,
     long long wt,
     bool printEdges,
-    unordered_map<long long, string> &nodeName);
+    unordered_map<long long, string> &nodeName,bool showcost);
 
 vector<tuple<long long, long long, long long>> Kruskal(
     unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,
     long long wt,
     bool printEdges,
-    unordered_map<long long, string> &nodeName);
+    unordered_map<long long, string> &nodeName,bool showcost);
 
 unordered_map<long long, vector<tuple<long long, long long>>> AdjacencyListForMst(
     vector<tuple<long long, long long, long long>> mst);

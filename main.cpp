@@ -183,7 +183,7 @@ int32_t main() {
                 cout << "1 to print total only, 2 to show full MST: ";
                 cin >> choice;
                 bool printEdges = (choice == 2);
-                mst = Prim(AdjacencyList, wt, printEdges, nodeName);
+                mst = Prim(AdjacencyList, wt, printEdges, nodeName,true);
                 break;
             }
 
@@ -195,7 +195,7 @@ int32_t main() {
                 cout << "1 to print total only, 2 to show full MST: ";
                 cin >> choice;
                 bool printEdges = (choice == 2);
-                mst = Kruskal(AdjacencyList, wt, printEdges, nodeName);
+                mst = Kruskal(AdjacencyList, wt, printEdges, nodeName,true);
                 break;
             }
 
@@ -209,10 +209,10 @@ int32_t main() {
                 cin >> wt;
 
                 cout << "\nrunning Prim...\n";
-                vector<tuple<long long, long long, long long>> primMST = Prim(AdjacencyList, wt, false, nodeName);
+                vector<tuple<long long, long long, long long>> primMST = Prim(AdjacencyList, wt, false, nodeName,true);
 
                 cout << "\nrunning Kruskal...\n";
-                vector<tuple<long long, long long, long long>> kruskalMST = Kruskal(AdjacencyList, wt, false, nodeName);
+                vector<tuple<long long, long long, long long>> kruskalMST = Kruskal(AdjacencyList, wt, false, nodeName,true);
 
                 if (primMST.empty() || kruskalMST.empty()) {
                     cout << "one or both MSTs are empty, comparison not possible\n";
@@ -236,26 +236,30 @@ int32_t main() {
             }
 
             case 11: {
-                if (mst.empty()) {
-                    cout << "run MST first (option 8 or 9)\n";
-                    break;
-                }
                 long long start, end;
                 int filter;
-                cout << "filter (1=latency, 2=cost): "; cin >> filter;
-                cout << "source id: ";      cin >> start;
+
+                cout << "filter (1=latency, 2=cost): ";
+                cin >> filter;
+
+                cout << "source id: "; cin >> start;
                 cout << "destination id: "; cin >> end;
 
                 if (!validNode(start, nodeName) || !validNode(end, nodeName)) {
                     cout << "invalid nodes\n";
                     break;
                 }
+
                 if (start == end) {
                     cout << "source and destination are the same\n";
                     break;
                 }
 
-                unordered_map<long long, vector<tuple<long long, long long>>> mstAdj = AdjacencyListForMst(mst);
+                vector<tuple<long long,long long,long long>> tempMST;
+
+                tempMST = Prim(AdjacencyList, filter, false, nodeName, false);
+                
+                auto mstAdj = AdjacencyListForMst(tempMST);
 
                 cout << "\n--- Dijkstra path (full graph) ---";
                 shortestPathForOne(start, end, AdjacencyList, filter, nodeName);
@@ -266,17 +270,25 @@ int32_t main() {
             }
 
             case 12: {
-                if (mst.empty()) {
-                    cout << "run MST first (option 8 or 9)\n";
-                    break;
-                }
-                unordered_map<long long, vector<tuple<long long, long long>>> mstAdj = AdjacencyListForMst(mst);
+                int filter;
+
+                cout << "filter (1=latency, 2=cost): ";
+                cin >> filter;
+
+                vector<tuple<long long,long long,long long>> tempMST;
+
+                
+                tempMST = Prim(AdjacencyList, filter, false, nodeName, false);
+                auto mstAdj = AdjacencyListForMst(tempMST);
+
                 cout << "\n--- MST structure ---\n";
                 for (auto &node : mstAdj) {
                     cout << "[" << node.first << "] " << nodeName[node.first] << " :\n";
                     for (auto &edge : node.second) {
-                        cout << "   -> [" << get<0>(edge) << "] " << nodeName[get<0>(edge)]
-                             << "  weight: " << get<1>(edge) << "\n";
+                        cout << "   -> [" << get<0>(edge) << "] "
+                            << nodeName[get<0>(edge)]
+                            << "  weight: " << get<1>(edge)
+                            << (filter == 1 ? " ms" : " USD") << "\n";
                     }
                 }
                 break;

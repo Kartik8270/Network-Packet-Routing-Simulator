@@ -10,7 +10,7 @@ vector<tuple<long long, long long, long long>> Prim(
     unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,
     long long wt,
     bool printEdges,
-    unordered_map<long long, string> &nodeName) {
+    unordered_map<long long, string> &nodeName,bool showcost) {
 
     if (adj.empty()) {
         cout << "graph is empty\n";
@@ -55,17 +55,19 @@ vector<tuple<long long, long long, long long>> Prim(
         cout << "warning: graph is disconnected, MST does not cover all nodes\n";
         cout << "nodes covered: " << mst.size() + 1 << " out of " << nodeName.size() << "\n";
     }
+    if(showcost){
+        if (wt == 1)
+            cout << "\n--- Latency Optimized MST (Prim) ---\n";
+        else
+            cout << "\n--- Cost Optimized MST (Prim) ---\n";
 
-    if (wt == 1)
-        cout << "\n--- Latency Optimized MST (Prim) ---\n";
-    else
-        cout << "\n--- Cost Optimized MST (Prim) ---\n";
+        if (wt == 1)
+            cout << "total MST latency: " << totalCost << " ms\n";
+        else
+            cout << "total MST cost: $" << totalCost << "\n";
 
-    if (wt == 1)
-        cout << "total MST latency: " << totalCost << " ms\n";
-    else
-        cout << "total MST cost: $" << totalCost << "\n";
-
+    }
+    
     if (printEdges) {
         unordered_map<long long, vector<tuple<long long, long long>>> mstAdj;
         for (auto &e : mst) {
@@ -92,7 +94,7 @@ vector<tuple<long long, long long, long long>> Kruskal(
     unordered_map<long long, vector<tuple<long long, long long, long long>>> &adj,
     long long wt,
     bool printEdges,
-    unordered_map<long long, string> &nodeName) {
+    unordered_map<long long, string> &nodeName,bool showcost) {
 
     if (adj.empty()) {
         cout << "graph is empty\n";
@@ -132,14 +134,16 @@ vector<tuple<long long, long long, long long>> Kruskal(
         cout << "warning: graph is disconnected, MST does not cover all nodes\n";
         cout << "nodes covered: " << mst.size() + 1 << " out of " << nodeName.size() << "\n";
     }
+    if(showcost){
+        if (wt == 1)
+            cout << "\n--- Latency Optimized MST (Kruskal) ---\n";
+        else
+            cout << "\n--- Cost Optimized MST (Kruskal) ---\n";
 
-    if (wt == 1)
-        cout << "\n--- Latency Optimized MST (Kruskal) ---\n";
-    else
-        cout << "\n--- Cost Optimized MST (Kruskal) ---\n";
-
-    cout << "total MST " << (wt == 1 ? "latency: " : "cost: $")
-         << totalCost << (wt == 1 ? " ms\n" : "\n");
+        cout << "total MST " << (wt == 1 ? "latency: " : "cost: $")
+            << totalCost << (wt == 1 ? " ms\n" : "\n");
+    }
+    
 
     if (printEdges) {
         for (auto &e : mst) {
