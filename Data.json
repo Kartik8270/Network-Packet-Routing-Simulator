@@ -1,192 +1,124 @@
 {
-  "metadata": {
-    "network_name": "Global-Backbone-AS-75000",
-    "node_count": 30,
-    "link_count": 49,
-    "description": "Static snapshot of a Tier-1 ISP global fiber-optic backbone. Core nodes act as regional hubs. Edge nodes serve as access or regional PoPs. Latencies reflect real-world submarine and terrestrial fiber RTT estimates.",
-    "topology": "Sparse mesh \u2014 core nodes: 4-6 links, edge nodes: 1-3 links",
-    "generated_for": "C++ OSPF/MST Network Routing Simulator"
-  },
   "nodes": [
     {
       "id": 0,
-      "location": "Ashburn, USA",
-      "type": "core",
-      "ip_prefix": "10.1.0.0/16"
+      "location": "Ashburn, USA"
     },
     {
       "id": 1,
-      "location": "London, UK",
-      "type": "core",
-      "ip_prefix": "10.2.0.0/16"
+      "location": "London, UK"
     },
     {
       "id": 2,
-      "location": "Frankfurt, Germany",
-      "type": "core",
-      "ip_prefix": "10.3.0.0/16"
+      "location": "Frankfurt, Germany"
     },
     {
       "id": 3,
-      "location": "Tokyo, Japan",
-      "type": "core",
-      "ip_prefix": "10.4.0.0/16"
+      "location": "Tokyo, Japan"
     },
     {
       "id": 4,
-      "location": "Singapore, Singapore",
-      "type": "core",
-      "ip_prefix": "10.5.0.0/16"
+      "location": "Singapore, Singapore"
     },
     {
       "id": 5,
-      "location": "Los Angeles, USA",
-      "type": "core",
-      "ip_prefix": "10.6.0.0/16"
+      "location": "Los Angeles, USA"
     },
     {
       "id": 6,
-      "location": "Amsterdam, Netherlands",
-      "type": "core",
-      "ip_prefix": "10.7.0.0/16"
+      "location": "Amsterdam, Netherlands"
     },
     {
       "id": 7,
-      "location": "Mumbai, India",
-      "type": "core",
-      "ip_prefix": "10.8.0.0/16"
+      "location": "Mumbai, India"
     },
     {
       "id": 8,
-      "location": "S\u00e3o Paulo, Brazil",
-      "type": "core",
-      "ip_prefix": "10.9.0.0/16"
+      "location": "S\u00e3o Paulo, Brazil"
     },
     {
       "id": 9,
-      "location": "Sydney, Australia",
-      "type": "core",
-      "ip_prefix": "10.10.0.0/16"
+      "location": "Sydney, Australia"
     },
     {
       "id": 10,
-      "location": "New York, USA",
-      "type": "edge",
-      "ip_prefix": "10.11.0.0/16"
+      "location": "New York, USA"
     },
     {
       "id": 11,
-      "location": "Chicago, USA",
-      "type": "edge",
-      "ip_prefix": "10.12.0.0/16"
+      "location": "Chicago, USA"
     },
     {
       "id": 12,
-      "location": "Dallas, USA",
-      "type": "edge",
-      "ip_prefix": "10.13.0.0/16"
+      "location": "Dallas, USA"
     },
     {
       "id": 13,
-      "location": "Seattle, USA",
-      "type": "edge",
-      "ip_prefix": "10.14.0.0/16"
+      "location": "Seattle, USA"
     },
     {
       "id": 14,
-      "location": "Miami, USA",
-      "type": "edge",
-      "ip_prefix": "10.15.0.0/16"
+      "location": "Miami, USA"
     },
     {
       "id": 15,
-      "location": "Toronto, Canada",
-      "type": "edge",
-      "ip_prefix": "10.16.0.0/16"
+      "location": "Toronto, Canada"
     },
     {
       "id": 16,
-      "location": "Paris, France",
-      "type": "edge",
-      "ip_prefix": "10.17.0.0/16"
+      "location": "Paris, France"
     },
     {
       "id": 17,
-      "location": "Madrid, Spain",
-      "type": "edge",
-      "ip_prefix": "10.18.0.0/16"
+      "location": "Madrid, Spain"
     },
     {
       "id": 18,
-      "location": "Stockholm, Sweden",
-      "type": "edge",
-      "ip_prefix": "10.19.0.0/16"
+      "location": "Stockholm, Sweden"
     },
     {
       "id": 19,
-      "location": "Warsaw, Poland",
-      "type": "edge",
-      "ip_prefix": "10.20.0.0/16"
+      "location": "Warsaw, Poland"
     },
     {
       "id": 20,
-      "location": "Dubai, UAE",
-      "type": "edge",
-      "ip_prefix": "10.21.0.0/16"
+      "location": "Dubai, UAE"
     },
     {
       "id": 21,
-      "location": "Hong Kong, China",
-      "type": "edge",
-      "ip_prefix": "10.22.0.0/16"
+      "location": "Hong Kong, China"
     },
     {
       "id": 22,
-      "location": "Seoul, South Korea",
-      "type": "edge",
-      "ip_prefix": "10.23.0.0/16"
+      "location": "Seoul, South Korea"
     },
     {
       "id": 23,
-      "location": "Osaka, Japan",
-      "type": "edge",
-      "ip_prefix": "10.24.0.0/16"
+      "location": "Osaka, Japan"
     },
     {
       "id": 24,
-      "location": "Jakarta, Indonesia",
-      "type": "edge",
-      "ip_prefix": "10.25.0.0/16"
+      "location": "Jakarta, Indonesia"
     },
     {
       "id": 25,
-      "location": "Chennai, India",
-      "type": "edge",
-      "ip_prefix": "10.26.0.0/16"
+      "location": "Chennai, India"
     },
     {
       "id": 26,
-      "location": "Johannesburg, S. Africa",
-      "type": "edge",
-      "ip_prefix": "10.27.0.0/16"
+      "location": "Johannesburg, S. Africa"
     },
     {
       "id": 27,
-      "location": "Lagos, Nigeria",
-      "type": "edge",
-      "ip_prefix": "10.28.0.0/16"
+      "location": "Lagos, Nigeria"
     },
     {
       "id": 28,
-      "location": "Santiago, Chile",
-      "type": "edge",
-      "ip_prefix": "10.29.0.0/16"
+      "location": "Santiago, Chile"
     },
     {
       "id": 29,
-      "location": "Melbourne, Australia",
-      "type": "edge",
-      "ip_prefix": "10.30.0.0/16"
+      "location": "Melbourne, Australia"
     }
   ],
   "links": [
@@ -194,441 +126,294 @@
       "source": 0,
       "target": 1,
       "latency_ms": 76,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "TAT-14 Transatlantic",
       "cost_usd": 2280000000
     },
     {
       "source": 0,
       "target": 8,
       "latency_ms": 112,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "SAm-1 Transatlantic",
       "cost_usd": 3360000000
     },
     {
       "source": 0,
       "target": 10,
       "latency_ms": 5,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Metro Ring NE-US",
       "cost_usd": 15000000
     },
     {
       "source": 0,
       "target": 11,
       "latency_ms": 15,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "US Backbone Central",
       "cost_usd": 45000000
     },
     {
       "source": 0,
       "target": 14,
       "latency_ms": 20,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "US East Coast Terrestrial",
       "cost_usd": 60000000
     },
     {
       "source": 0,
       "target": 15,
       "latency_ms": 12,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "US-Canada Terrestrial",
       "cost_usd": 36000000
     },
     {
       "source": 1,
       "target": 2,
       "latency_ms": 14,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Europe Terrestrial DE-UK",
       "cost_usd": 42000000
     },
     {
       "source": 1,
       "target": 6,
       "latency_ms": 8,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Europe Terrestrial NL-UK",
       "cost_usd": 24000000
     },
     {
       "source": 1,
       "target": 16,
       "latency_ms": 10,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Europe Terrestrial FR-UK",
       "cost_usd": 30000000
     },
     {
       "source": 1,
       "target": 27,
       "latency_ms": 84,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "ACE Submarine West Africa",
       "cost_usd": 2520000000
     },
     {
       "source": 2,
       "target": 6,
       "latency_ms": 7,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Europe Terrestrial DE-NL",
       "cost_usd": 21000000
     },
     {
       "source": 2,
       "target": 7,
       "latency_ms": 106,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "SEA-ME-WE 5 Submarine",
       "cost_usd": 3180000000
     },
     {
       "source": 2,
       "target": 17,
       "latency_ms": 28,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Europe Terrestrial DE-ES",
       "cost_usd": 84000000
     },
     {
       "source": 2,
       "target": 18,
       "latency_ms": 24,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Europe Terrestrial DE-SE",
       "cost_usd": 72000000
     },
     {
       "source": 2,
       "target": 19,
       "latency_ms": 18,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Europe Terrestrial DE-PL",
       "cost_usd": 54000000
     },
     {
       "source": 3,
       "target": 5,
       "latency_ms": 100,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Trans-Pacific FASTER",
       "cost_usd": 3000000000
     },
     {
       "source": 3,
       "target": 9,
       "latency_ms": 112,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Southern Cross Submarine",
       "cost_usd": 3360000000
     },
     {
       "source": 3,
       "target": 21,
       "latency_ms": 48,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Asia-Pacific Submarine APG",
       "cost_usd": 1440000000
     },
     {
       "source": 3,
       "target": 22,
       "latency_ms": 30,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Korea-Japan Terrestrial",
       "cost_usd": 900000000
     },
     {
       "source": 3,
       "target": 23,
       "latency_ms": 8,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Japan Metro Ring",
       "cost_usd": 24000000
     },
     {
       "source": 4,
       "target": 7,
       "latency_ms": 68,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "SEA-ME-WE 4 Submarine",
       "cost_usd": 2040000000
     },
     {
       "source": 4,
       "target": 9,
       "latency_ms": 82,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Asia-Pacific PIPE Submarine",
       "cost_usd": 2460000000
     },
     {
       "source": 4,
       "target": 21,
       "latency_ms": 30,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Asia-Pacific AAG Submarine",
       "cost_usd": 900000000
     },
     {
       "source": 4,
       "target": 24,
       "latency_ms": 15,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "SEA Intra-Asia Submarine",
       "cost_usd": 450000000
     },
     {
       "source": 4,
       "target": 25,
       "latency_ms": 44,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "India-Singapore i2i Submarine",
       "cost_usd": 1320000000
     },
     {
       "source": 5,
       "target": 12,
       "latency_ms": 30,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "US West-Central Backbone",
       "cost_usd": 90000000
     },
     {
       "source": 5,
       "target": 13,
       "latency_ms": 20,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "US West Coast Terrestrial",
       "cost_usd": 60000000
     },
     {
       "source": 6,
       "target": 16,
       "latency_ms": 9,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Europe Terrestrial NL-FR",
       "cost_usd": 27000000
     },
     {
       "source": 6,
       "target": 18,
       "latency_ms": 20,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Europe Terrestrial NL-SE",
       "cost_usd": 60000000
     },
     {
       "source": 7,
       "target": 20,
       "latency_ms": 26,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Gulf Bridge International",
       "cost_usd": 780000000
     },
     {
       "source": 7,
       "target": 25,
       "latency_ms": 14,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "India Coastal Ring",
       "cost_usd": 420000000
     },
     {
       "source": 7,
       "target": 26,
       "latency_ms": 88,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "SEACOM East Africa Submarine",
       "cost_usd": 2640000000
     },
     {
       "source": 8,
       "target": 14,
       "latency_ms": 80,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "GlobeNet Americas Submarine",
       "cost_usd": 2400000000
     },
     {
       "source": 8,
       "target": 27,
       "latency_ms": 96,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "SAex South Atlantic Submarine",
       "cost_usd": 2880000000
     },
     {
       "source": 8,
       "target": 28,
       "latency_ms": 28,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "SAm South Cone Terrestrial",
       "cost_usd": 840000000
     },
     {
       "source": 9,
       "target": 24,
       "latency_ms": 60,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "Gondwana-1 Submarine",
       "cost_usd": 1800000000
     },
     {
       "source": 9,
       "target": 29,
       "latency_ms": 10,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "Australia Eastern Terrestrial",
       "cost_usd": 300000000
     },
     {
       "source": 10,
       "target": 11,
       "latency_ms": 15,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "US Northeast Backbone",
       "cost_usd": 45000000
     },
     {
       "source": 10,
       "target": 15,
       "latency_ms": 13,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "US-Canada Border Terrestrial",
       "cost_usd": 39000000
     },
     {
       "source": 11,
       "target": 12,
       "latency_ms": 24,
-      "bandwidth_gbps": 400,
-      "status": "active",
-      "cable": "US Central Backbone",
       "cost_usd": 72000000
     },
     {
       "source": 11,
       "target": 13,
       "latency_ms": 38,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "US North-West Backbone",
       "cost_usd": 114000000
     },
     {
       "source": 12,
       "target": 14,
       "latency_ms": 28,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "US South Terrestrial",
       "cost_usd": 84000000
     },
     {
       "source": 17,
       "target": 27,
       "latency_ms": 64,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "MainOne West Africa Submarine",
       "cost_usd": 1920000000
     },
     {
       "source": 20,
       "target": 25,
       "latency_ms": 29,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "India-Gulf TW1 Submarine",
       "cost_usd": 870000000
     },
     {
       "source": 20,
       "target": 26,
       "latency_ms": 54,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "EASSy East Africa Submarine",
       "cost_usd": 1620000000
     },
     {
       "source": 21,
       "target": 22,
       "latency_ms": 34,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Hong Kong-Korea Submarine",
       "cost_usd": 1020000000
     },
     {
       "source": 22,
       "target": 23,
       "latency_ms": 24,
-      "bandwidth_gbps": 200,
-      "status": "active",
-      "cable": "Korea-Japan JGA Submarine",
       "cost_usd": 720000000
     },
     {
       "source": 24,
       "target": 29,
       "latency_ms": 56,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "JASUKA Australia-Indonesia",
       "cost_usd": 1680000000
     },
     {
       "source": 26,
       "target": 27,
       "latency_ms": 78,
-      "bandwidth_gbps": 100,
-      "status": "active",
-      "cable": "WACS West Africa Submarine",
       "cost_usd": 2340000000
     }
   ]
