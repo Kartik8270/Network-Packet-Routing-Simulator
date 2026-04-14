@@ -1,0 +1,5 @@
+node_modules/
+network_main
+main.exe
+.DS_Store
+.env

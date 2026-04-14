@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetRoute — Packet Routing Simulator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:        #0a0c10;
+    --panel:     #0f1218;
+    --border:    #1e2535;
+    --accent:    #00e5ff;
+    --accent2:   #7c3aed;
+    --accent3:   #10b981;
+    --warn:      #f59e0b;
+    --danger:    #ef4444;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --node-fill: #1a2035;
+    --node-stroke: #00e5ff;
+    --link-color: #1e3a5f;
+    --link-active: #00e5ff;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-head: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid noise texture ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(0,229,255,.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, rgba(124,58,237,.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,12,16,.85);
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-family: var(--font-head);
+    font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .status-bar {
+    display: flex; gap: 20px; align-items: center;
+    font-size: .75rem; color: var(--muted);
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent3); display: inline-block;
+    box-shadow: 0 0 6px var(--accent3);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── Main layout ── */
+  .layout {
+    position: relative; z-index: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr 340px;
+    grid-template-rows: 1fr;
+    height: calc(100vh - 61px);
+    overflow: hidden;
+  }
+
+  /* ── Panels ── */
+  .panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-head);
+    font-size: .78rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    flex-shrink: 0;
+  }
+  .panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .panel-body::-webkit-scrollbar { width: 3px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Graph canvas ── */
+  #graph-container {
+    position: relative; overflow: hidden;
+    background: var(--bg);
+  }
+  #graph-container svg { width: 100%; height: 100%; }
+
+  .canvas-controls {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px;
+  }
+  .canvas-btn {
+    background: rgba(15,18,24,.85); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); color: var(--muted);
+    font-family: var(--font-mono); font-size: .72rem;
+    padding: 6px 14px; cursor: pointer; border-radius: 4px;
+    transition: all .2s;
+  }
+  .canvas-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tab {
+    flex: 1; padding: 10px 6px; font-family: var(--font-mono);
+    font-size: .68rem; letter-spacing: .5px; text-align: center;
+    cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all .2s; background: none; border-top: none; border-left: none; border-right: none;
+    text-transform: uppercase;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Form controls ── */
+  .field-label {
+    font-size: .68rem; color: var(--muted); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 5px; display: block;
+  }
+  input[type=number], input[type=text], select {
+    width: 100%; background: rgba(255,255,255,.03);
+    border: 1px solid var(--border); color: var(--text);
+    font-family: var(--font-mono); font-size: .82rem;
+    padding: 8px 12px; border-radius: 4px;
+    outline: none; transition: border-color .2s;
+    -moz-appearance: textfield;
+  }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--panel); }
+
+  .btn {
+    width: 100%; padding: 10px; border: 1px solid var(--accent);
+    background: rgba(0,229,255,.06); color: var(--accent);
+    font-family: var(--font-mono); font-size: .8rem; letter-spacing: 1px;
+    cursor: pointer; border-radius: 4px; text-transform: uppercase;
+    transition: all .2s; position: relative; overflow: hidden;
+  }
+  .btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent); transform: translateX(-101%);
+    transition: transform .25s; z-index: -1;
+  }
+  .btn:hover { color: #0a0c10; }
+  .btn:hover::after { transform: translateX(0); }
+  .btn.purple { border-color: var(--accent2); background: rgba(124,58,237,.06); color: var(--accent2); }
+  .btn.purple::after { background: var(--accent2); }
+  .btn.green { border-color: var(--accent3); background: rgba(16,185,129,.06); color: var(--accent3); }
+  .btn.green::after { background: var(--accent3); }
+  .btn.warn { border-color: var(--warn); background: rgba(245,158,11,.06); color: var(--warn); }
+  .btn.warn::after { background: var(--warn); }
+  .btn.danger { border-color: var(--danger); background: rgba(239,68,68,.06); color: var(--danger); }
+  .btn.danger::after { background: var(--danger); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:disabled:hover { color: inherit; }
+  .btn:disabled:hover::after { transform: translateX(-101%); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── Output panel ── */
+  .output-box {
+    background: rgba(0,0,0,.35); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px; font-size: .75rem;
+    line-height: 1.7; min-height: 80px; max-height: 320px;
+    overflow-y: auto; white-space: pre-wrap; color: var(--text);
+    font-family: var(--font-mono);
+  }
+  .output-box::-webkit-scrollbar { width: 3px; }
+  .output-box::-webkit-scrollbar-thumb { background: var(--border); }
+  .output-box .ok   { color: var(--accent3); }
+  .output-box .err  { color: var(--danger); }
+  .output-box .warn { color: var(--warn); }
+  .output-box .hi   { color: var(--accent); }
+
+  /* ── Node list ── */
+  .node-list { display: flex; flex-direction: column; gap: 4px; }
+  .node-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 4px; cursor: pointer;
+    border: 1px solid transparent; transition: all .15s; font-size: .78rem;
+  }
+  .node-item:hover { background: rgba(0,229,255,.04); border-color: rgba(0,229,255,.15); }
+  .node-item.selected { background: rgba(0,229,255,.08); border-color: rgba(0,229,255,.3); color: var(--accent); }
+  .node-id {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--node-fill); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .68rem; color: var(--accent); flex-shrink: 0;
+  }
+  .node-name { flex: 1; font-size: .76rem; }
+
+  /* ── Info cards ── */
+  .info-card {
+    background: rgba(0,0,0,.2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px;
+  }
+  .info-card-title {
+    font-size: .65rem; color: var(--muted); letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .info-card-value { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── Separator ── */
+  .sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ── Result path display ── */
+  .path-display {
+    background: rgba(0,229,255,.03); border: 1px solid rgba(0,229,255,.15);
+    border-radius: 4px; padding: 10px; font-size: .72rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  }
+  .path-node {
+    background: rgba(0,229,255,.1); border: 1px solid rgba(0,229,255,.25);
+    color: var(--accent); padding: 2px 8px; border-radius: 3px;
+    white-space: nowrap;
+  }
+  .path-arrow { color: var(--muted); font-size: .8rem; }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .6s linear infinite;
+    margin-right: 6px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 9999;
+    background: rgba(10,12,16,.95); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 10px 14px; font-size: .72rem;
+    line-height: 1.6; display: none; max-width: 200px;
+  }
+  #tooltip .t-name { font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+
+  /* ── MST edge highlight ── */
+  .mst-edge { stroke: var(--accent3) !important; stroke-width: 2.5px !important; opacity: .9 !important; }
+  .path-edge { stroke: var(--accent) !important; stroke-width: 3px !important; opacity: 1 !important; }
+  .node-highlighted circle { fill: var(--accent) !important; }
+
+  /* ── Scrollable node select list ── */
+  .select-list {
+    border: 1px solid var(--border); border-radius: 4px;
+    max-height: 130px; overflow-y: auto; font-size: .76rem;
+  }
+  .select-list::-webkit-scrollbar { width: 3px; }
+  .select-list::-webkit-scrollbar-thumb { background: var(--border); }
+  .select-list-item {
+    padding: 5px 10px; cursor: pointer; transition: background .1s;
+    display: flex; gap: 8px;
+  }
+  .select-list-item:hover { background: rgba(0,229,255,.06); }
+  .select-list-item.chosen { background: rgba(0,229,255,.12); color: var(--accent); }
+  .select-list-item .sid { color: var(--muted); font-size: .68rem; width: 20px; flex-shrink: 0; }
+
+  /* ── Alert ── */
+  .alert {
+    padding: 8px 12px; border-radius: 4px; font-size: .74rem;
+    border-left: 3px solid var(--accent); background: rgba(0,229,255,.05);
+  }
+  .alert.danger { border-color: var(--danger); background: rgba(239,68,68,.05); color: var(--danger); }
+  .alert.success { border-color: var(--accent3); background: rgba(16,185,129,.05); color: var(--accent3); }
+  .alert.info { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Graph node & link styles ── */
+  .link { stroke: var(--link-color); stroke-width: 1px; opacity: .7; }
+  .node circle {
+    fill: var(--node-fill); stroke: var(--border);
+    stroke-width: 1.5px; cursor: pointer;
+    transition: stroke .2s, fill .2s;
+  }
+  .node:hover circle { stroke: var(--accent); fill: rgba(0,229,255,.12); }
+  .node text {
+    font-size: 9px; fill: var(--muted); font-family: var(--font-mono);
+    pointer-events: none; text-anchor: middle;
+  }
+  .node .node-label-name {
+    font-size: 8px; fill: rgba(100,116,139,.7);
+  }
+
+  /* ── Edge weight labels ── */
+  .edge-label { font-size: 8px; fill: var(--muted); pointer-events: none; }
+
+  /* graph legend */
+  .legend {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(10,12,16,.8); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; font-size: .68rem; color: var(--muted);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-line { width: 20px; height: 2px; }
+
+  /* add/delete forms */
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 4px; }
+
+  /* pill badge */
+  .badge {
+    display: inline-block; padding: 1px 6px;
+    border-radius: 20px; font-size: .62rem; letter-spacing: .5px;
+    background: rgba(0,229,255,.1); color: var(--accent); border: 1px solid rgba(0,229,255,.2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Net<span>Route</span></div>
+  <div class="status-bar">
+    <span><span class="status-dot"></span></span>
+    <span id="node-count">0 nodes</span>
+    <span id="edge-count">0 edges</span>
+    <span id="server-status">connecting…</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── LEFT PANEL: Controls ── -->
+  <div class="panel">
+    <div class="panel-header">Algorithms</div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('shortest')">Path</button>
+      <button class="tab" onclick="switchTab('dijkstra')">Dijkstra</button>
+      <button class="tab" onclick="switchTab('mst')">MST</button>
+      <button class="tab" onclick="switchTab('graph')">Graph</button>
+    </div>
+    <div class="panel-body">
+
+      <!-- SHORTEST PATH -->
+      <div id="tab-shortest" class="tab-content active">
+        <div>
+          <span class="field-label">Filter</span>
+          <select id="sp-filter">
+            <option value="1">Latency (ms)</option>
+            <option value="2">Cost (USD)</option>
+          </select>
+        </div>
+        <div>
+          <span class="field-label">Source Node</span>
+          <div class="select-list" id="sp-from-list"></div>
+        </div>
+        <div>
+          <span class="field-label">Destination Node</span>
+          <div class="select-list" id="sp-to-list"></div>
+        </div>
+        <button class="btn" id="btn-shortest" onclick="runShortestPath()">
+          ▶ Find Shortest Path
+        </button>
+        <div class="sep"></div>
+        <div id="sp-result"></div>
+      </div>
+
+      <!-- DIJKSTRA ALL -->
+      <div id="tab-dijkstra" class="tab-content">
+        <div>
+          <span class="field-label">Filter</span>
+          <select id="dij-filter">
+            <option value="1">Latency (ms)</option>
+            <option value="2">Cost (USD)</option>
+          </select>
+        </div>
+        <div>
+          <span class="field-label">Source Node</span>
+          <div class="select-list" id="dij-src-list"></div>
+        </div>
+        <button class="btn green" onclick="runDijkstraAll()">
+          ▶ Compute All Distances
+        </button>
+        <div class="sep"></div>
+        <div id="dij-result"></div>
+      </div>
+
+      <!-- MST -->
+      <div id="tab-mst" class="tab-content">
+        <div>
+          <span class="field-label">Filter</span>
+          <select id="mst-filter">
+            <option value="1">Latency (ms)</option>
+            <option value="2">Cost (USD)</option>
+          </select>
+        </div>
+        <div class="row-2">
+          <button class="btn purple" onclick="runMST('prim')">Prim's</button>
+          <button class="btn" onclick="runMST('kruskal')">Kruskal's</button>
+        </div>
+        <button class="btn warn" onclick="runMSTCompare()">⚡ Compare Both</button>
+        <div class="sep"></div>
+        <div id="mst-result"></div>
+      </div>
+
+      <!-- GRAPH EDIT -->
+      <div id="tab-graph" class="tab-content">
+        <div class="alert info">Manage nodes and edges below.</div>
+
+        <!-- Add Node -->
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Add Node</div>
+        <div class="form-group">
+          <span class="field-label">Node ID</span>
+          <input type="number" id="add-node-id" placeholder="e.g. 30" min="0">
+        </div>
+        <div class="form-group">
+          <span class="field-label">Location Name</span>
+          <input type="text" id="add-node-name" placeholder="e.g. Cairo, Egypt">
+        </div>
+        <button class="btn green" onclick="addNode()">+ Add Node</button>
+
+        <div class="sep" style="margin:8px 0"></div>
+
+        <!-- Add Edge -->
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Add Edge</div>
+        <div class="row-2">
+          <div class="form-group">
+            <span class="field-label">From ID</span>
+            <input type="number" id="add-edge-from" placeholder="0">
+          </div>
+          <div class="form-group">
+            <span class="field-label">To ID</span>
+            <input type="number" id="add-edge-to" placeholder="1">
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <span class="field-label">Latency (ms)</span>
+            <input type="number" id="add-edge-latency" placeholder="10">
+          </div>
+          <div class="form-group">
+            <span class="field-label">Cost (USD)</span>
+            <input type="number" id="add-edge-cost" placeholder="1000000">
+          </div>
+        </div>
+        <button class="btn green" onclick="addEdge()">+ Add Edge</button>
+
+        <div class="sep" style="margin:8px 0"></div>
+
+        <!-- Delete Node -->
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Delete Node</div>
+        <div class="form-group">
+          <span class="field-label">Node ID</span>
+          <input type="number" id="del-node-id" placeholder="e.g. 5">
+        </div>
+        <button class="btn danger" onclick="deleteNode()">✕ Delete Node</button>
+
+        <div class="sep" style="margin:8px 0"></div>
+
+        <!-- Delete Edge -->
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Delete Edge</div>
+        <div class="row-2">
+          <div class="form-group">
+            <span class="field-label">From ID</span>
+            <input type="number" id="del-edge-from" placeholder="0">
+          </div>
+          <div class="form-group">
+            <span class="field-label">To ID</span>
+            <input type="number" id="del-edge-to" placeholder="1">
+          </div>
+        </div>
+        <button class="btn danger" onclick="deleteEdge()">✕ Delete Edge</button>
+
+        <div id="graph-edit-result" style="margin-top:8px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── CENTER: Graph ── -->
+  <div id="graph-container">
+    <svg id="graph-svg"></svg>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-line" style="background:var(--link-color)"></div> Cable</div>
+      <div class="legend-item"><div class="legend-line" style="background:var(--accent3)"></div> MST Edge</div>
+      <div class="legend-item"><div class="legend-line" style="background:var(--accent)"></div> Path</div>
+    </div>
+    <div class="canvas-controls">
+      <button class="canvas-btn" onclick="refreshGraph()">Refresh</button>
+      <button class="canvas-btn" onclick="resetZoom()">Reset View</button>
+      <button class="canvas-btn" id="btn-labels" onclick="toggleLabels()">Labels: Off</button>
+      <button class="canvas-btn" onclick="clearHighlights()">Clear</button>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL: Info ── -->
+  <div class="panel">
+    <div class="panel-header">Network Info</div>
+    <div class="panel-body" style="gap:12px;display:flex;flex-direction:column">
+
+      <div class="stats-row">
+        <div class="info-card">
+          <div class="info-card-title">Nodes</div>
+          <div class="info-card-value" id="info-nodes" style="color:var(--accent)">—</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Edges</div>
+          <div class="info-card-value" id="info-edges" style="color:var(--accent2)">—</div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-title">Selected Node</div>
+        <div id="selected-node-info" style="font-size:.8rem;color:var(--muted)">Click a node to inspect</div>
+      </div>
+
+      <div>
+        <div class="panel-header" style="padding:0 0 8px 0;border:none">Node Directory</div>
+        <input type="text" id="search-nodes" placeholder="Search nodes…" oninput="filterNodes(this.value)" style="margin-bottom:8px">
+        <div class="node-list" id="node-directory"></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div>
+        <div style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Output Log</div>
+        <div class="output-box" id="output-log">// Results will appear here…
+</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<script>
+// ================================================================
+// CONFIG
+// ================================================================
+const API = 'http://localhost:5002';
+let graphData = { nodes: [], links: [] };
+let simulation = null;
+let svgEl, gEl, zoomBehavior;
+let showLabels = true;
+const EMBEDDED_DATA = { nodes: [], links: [] };
+let selectedFrom = null, selectedTo = null, selectedSrc = null;
+let highlightedLinks = [], highlightedNodes = [];
+
+// ================================================================
+// FETCH HELPER
+// ================================================================
+async function api(endpoint, body) {
+  const r = await fetch(API + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// ================================================================
+// SERVER STATUS CHECK
+// ================================================================
+async function checkServer() {
+  try {
+    const r = await fetch(API + '/shortest-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 0, to: 1, filter: 1 })
+    });
+    if (r.ok) {
+      document.getElementById('server-status').textContent = 'server online';
+      document.getElementById('server-status').style.color = 'var(--accent3)';
+    }
+  } catch {
+    document.getElementById('server-status').textContent = '⚠ server offline';
+    document.getElementById('server-status').style.color = 'var(--danger)';
+  }
+}
+
+// ================================================================
+// LOAD DATA FROM Data.json (fetch locally as fallback)
+// ================================================================
+async function loadGraphData() {
+  console.log('Fetching graph data...');
+  try {
+    if (typeof d3 === 'undefined') {
+        throw new Error('D3.js library not loaded. Check internet connection or CDN.');
+    }
+    const r = await fetch('Data.json');
+    if (!r.ok) throw new Error('Fetch failed: ' + r.status);
+    graphData = await r.json();
+    console.log('Graph data loaded:', graphData);
+    if (!graphData.nodes || graphData.nodes.length === 0) {
+        console.warn('Graph data is empty!');
+    }
+  } catch (err) {
+    console.warn('Failed to load Data.json or D3, using fallback:', err);
+    document.getElementById('output-log').innerHTML += `<span class="err">ERROR: ${err.message}</span>\n`;
+    graphData = EMBEDDED_DATA;
+  }
+  initGraph();
+  buildNodeLists();
+  updateStats();
+}
+
+// ================================================================
+// GRAPH VISUALIZATION
+// ================================================================
+function initGraph() {
+  const container = document.getElementById('graph-container');
+  let W = container.clientWidth, H = container.clientHeight;
+  
+  if (W === 0 || H === 0) {
+      console.warn('Container dimensions are 0, using fallback dimensions.');
+      W = window.innerWidth - 640; // Approx based on grid columns
+      H = window.innerHeight - 61;
+  }
+
+  d3.select('#graph-svg').selectAll('*').remove();
+  svgEl = d3.select('#graph-svg').attr('width', W).attr('height', H);
+
+  zoomBehavior = d3.zoom().scaleExtent([.2, 4]).on('zoom', e => {
+    gEl.attr('transform', e.transform);
+  });
+  svgEl.call(zoomBehavior);
+
+  gEl = svgEl.append('g');
+
+  // Arrowhead marker
+  svgEl.append('defs').append('marker')
+    .attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
+    .attr('refX', 18).attr('refY', 0).attr('markerWidth', 4).attr('markerHeight', 4)
+    .attr('orient', 'auto')
+    .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#1e3a5f');
+
+  const nodes = graphData.nodes.map(d => ({ ...d }));
+  const links = graphData.links.map(d => ({ ...d }));
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(80).strength(.5))
+    .force('charge', d3.forceManyBody().strength(-280))
+    .force('center', d3.forceCenter(W / 2, H / 2))
+    .force('collision', d3.forceCollide(32));
+
+  // Links
+  const link = gEl.append('g').selectAll('line')
+    .data(links).enter().append('line')
+    .attr('class', 'link')
+    .attr('data-source', d => d.source.id ?? d.source)
+    .attr('data-target', d => d.target.id ?? d.target)
+    .attr('stroke-width', 1);
+
+  // Formatter for large cost numbers
+  const formatCost = c => {
+    if (c >= 1e9) return '$' + (c / 1e9).toFixed(1) + 'B';
+    if (c >= 1e6) return '$' + (c / 1e6).toFixed(1) + 'M';
+    if (c >= 1e3) return '$' + (c / 1e3).toFixed(0) + 'K';
+    return '$' + c;
+  };
+
+  // Attach formatter to window for toggle access
+  window.formatCost = formatCost;
+
+  // Edge weight labels (hidden by default for density)
+  const edgeLabel = gEl.append('g').selectAll('text')
+    .data(links).enter().append('text')
+    .attr('class', 'edge-label')
+    .attr('text-anchor', 'middle')
+    .style('display', 'none')
+    .style('font-size', '10px');
+
+  // Nodes
+  const node = gEl.append('g').selectAll('g.node')
+    .data(nodes).enter().append('g')
+    .attr('class', 'node')
+    .attr('data-id', d => d.id)
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end',   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    )
+    .on('click', (e, d) => onNodeClick(d))
+    .on('mouseover', (e, d) => showTooltip(e, d))
+    .on('mousemove', moveTooltip)
+    .on('mouseout', hideTooltip);
+
+  node.append('circle').attr('r', 14);
+  node.append('text').attr('dy', 4).text(d => d.id);
+
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    edgeLabel
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+function onNodeClick(d) {
+  document.querySelectorAll('.node circle').forEach(c => { c.style.fill = ''; c.style.stroke = ''; });
+  const el = document.querySelector(`.node[data-id="${d.id}"] circle`);
+  if (el) { el.style.fill = 'rgba(0,229,255,.2)'; el.style.stroke = 'var(--accent)'; }
+
+  // update info panel
+  const edges = graphData.links.filter(l =>
+    (l.source === d.id || l.source?.id === d.id) ||
+    (l.target === d.id || l.target?.id === d.id)
+  );
+  document.getElementById('selected-node-info').innerHTML =
+    `<span style="color:var(--accent);font-size:.9rem">[${d.id}] ${d.location}</span><br>` +
+    `<span style="color:var(--muted);font-size:.7rem">Connections: ${edges.length}</span>`;
+
+  // highlight selected in lists
+  document.querySelectorAll('.select-list-item').forEach(el => el.classList.remove('chosen'));
+  document.querySelectorAll(`[data-nid="${d.id}"]`).forEach(el => el.classList.add('chosen'));
+}
+
+function showTooltip(e, d) {
+  const edges = graphData.links.filter(l =>
+    (l.source === d.id || l.source?.id === d.id) ||
+    (l.target === d.id || l.target?.id === d.id)
+  );
+  document.getElementById('tooltip').style.display = 'block';
+  document.getElementById('tooltip').innerHTML =
+    `<div class="t-name">[${d.id}] ${d.location}</div>` +
+    `<div style="color:var(--muted)">Connections: ${edges.length}</div>`;
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  tt.style.left = (e.clientX + 14) + 'px';
+  tt.style.top  = (e.clientY - 10) + 'px';
+}
+function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+function resetZoom() {
+  svgEl.transition().duration(600).call(zoomBehavior.transform, d3.zoomIdentity);
+}
+
+async function refreshGraph() {
+  document.querySelectorAll('.canvas-btn')[0].innerHTML = '<span class="spinner"></span>...';
+  await loadGraphData();
+  document.querySelectorAll('.canvas-btn')[0].innerHTML = 'Refresh';
+  showEditResult('Graph refreshed from server.', 'success');
+}
+let showLabelsMode = 0; // 0=off, 1=latency, 2=cost, 3=both
+
+function toggleLabels() {
+  showLabelsMode = (showLabelsMode + 1) % 4;
+  const btn = document.getElementById('btn-labels');
+  
+  if (showLabelsMode === 0) {
+    d3.selectAll('.edge-label').style('display', 'none');
+    btn.innerHTML = 'Labels: Off';
+  } else if (showLabelsMode === 1) {
+    d3.selectAll('.edge-label')
+      .style('display', null)
+      .text(d => d.latency_ms + 'ms');
+    btn.innerHTML = 'Labels: Latency';
+  } else if (showLabelsMode === 2) {
+    d3.selectAll('.edge-label')
+      .style('display', null)
+      .text(d => window.formatCost ? window.formatCost(d.cost_usd) : d.cost_usd);
+    btn.innerHTML = 'Labels: Cost';
+  } else {
+    d3.selectAll('.edge-label')
+      .style('display', null)
+      .text(d => `${d.latency_ms}ms | ${(window.formatCost ? window.formatCost(d.cost_usd) : d.cost_usd)}`);
+    btn.innerHTML = 'Labels: Both';
+  }
+}
+
+function clearHighlights() {
+  d3.selectAll('.link').classed('mst-edge', false).classed('path-edge', false)
+    .attr('stroke', null).attr('stroke-width', null).attr('opacity', null);
+  d3.selectAll('.node circle').style('fill', '').style('stroke', '');
+}
+
+// Highlight edges by node-id pairs
+function highlightPath(path, cls) {
+  clearHighlights();
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i], b = path[i + 1];
+    d3.selectAll('.link').filter(function() {
+      const s = +this.getAttribute('data-source');
+      const t = +this.getAttribute('data-target');
+      return (s === a && t === b) || (s === b && t === a);
+    }).classed(cls, true);
+  }
+  path.forEach(id => {
+    const c = document.querySelector(`.node[data-id="${id}"] circle`);
+    if (c) { c.style.fill = 'rgba(0,229,255,.25)'; c.style.stroke = 'var(--accent)'; }
+  });
+}
+
+function highlightMSTEdges(edgePairs) {
+  clearHighlights();
+  edgePairs.forEach(([a, b]) => {
+    d3.selectAll('.link').filter(function() {
+      const s = +this.getAttribute('data-source');
+      const t = +this.getAttribute('data-target');
+      return (s === a && t === b) || (s === b && t === a);
+    }).classed('mst-edge', true);
+  });
+}
+
+// ================================================================
+// NODE LISTS
+// ================================================================
+function buildNodeLists() {
+  ['sp-from-list', 'sp-to-list', 'dij-src-list'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    graphData.nodes.forEach(n => {
+      const div = document.createElement('div');
+      div.className = 'select-list-item';
+      div.dataset.nid = n.id;
+      div.dataset.listId = id;
+      div.innerHTML = `<span class="sid">${n.id}</span><span>${n.location}</span>`;
+      div.onclick = () => selectNode(id, n.id, div);
+      el.appendChild(div);
+    });
+  });
+
+  // Directory
+  renderDirectory('');
+}
+
+function selectNode(listId, nodeId, el) {
+  document.querySelectorAll(`[data-list-id="${listId}"]`).forEach(d => d.classList.remove('chosen'));
+  el.classList.add('chosen');
+  if (listId === 'sp-from-list') selectedFrom = nodeId;
+  else if (listId === 'sp-to-list') selectedTo = nodeId;
+  else if (listId === 'dij-src-list') selectedSrc = nodeId;
+}
+
+function renderDirectory(filter) {
+  const dir = document.getElementById('node-directory');
+  dir.innerHTML = '';
+  graphData.nodes
+    .filter(n => n.location.toLowerCase().includes(filter.toLowerCase()) || String(n.id).includes(filter))
+    .forEach(n => {
+      const div = document.createElement('div');
+      div.className = 'node-item';
+      div.innerHTML = `<div class="node-id">${n.id}</div><div class="node-name">${n.location}</div>`;
+      div.onclick = () => onNodeClick(n);
+      dir.appendChild(div);
+    });
+}
+
+function filterNodes(v) { renderDirectory(v); }
+
+function updateStats() {
+  const nc = graphData.nodes.length;
+  const ec = graphData.links.length;
+  document.getElementById('node-count').textContent = nc + ' nodes';
+  document.getElementById('edge-count').textContent = ec + ' edges';
+  document.getElementById('info-nodes').textContent = nc;
+  document.getElementById('info-edges').textContent = ec;
+}
+
+// ================================================================
+// TAB SWITCHING
+// ================================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['shortest', 'dijkstra', 'mst', 'graph'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ================================================================
+// OUTPUT HELPERS
+// ================================================================
+function log(html) {
+  const box = document.getElementById('output-log');
+  box.innerHTML += html + '\n';
+  box.scrollTop = box.scrollHeight;
+}
+
+function parseOutput(text) {
+  if (!text) return '<span class="warn">no output</span>';
+  return text
+    .replace(/error|invalid|not found|unreachable/gi, m => `<span class="err">${m}</span>`)
+    .replace(/\$[\d,]+/g, m => `<span class="ok">${m}</span>`)
+    .replace(/\d+ ms/g, m => `<span class="hi">${m}</span>`)
+    .replace(/total \w+:/gi, m => `<span class="ok">${m}</span>`)
+    .replace(/warning:/gi, m => `<span class="warn">${m}</span>`);
+}
+
+// Parse a path string like "A -> B -> C" and return IDs
+function extractPathIDs(output) {
+  const match = output.match(/path: (.+)/);
+  if (!match) return [];
+  // Extract bracketed IDs or infer from node names
+  const names = match[1].split('->').map(s => s.trim());
+  const ids = [];
+  names.forEach(name => {
+    const node = graphData.nodes.find(n => n.location === name);
+    if (node) ids.push(node.id);
+  });
+  return ids;
+}
+
+// ================================================================
+// SHORTEST PATH
+// ================================================================
+async function runShortestPath() {
+  if (selectedFrom === null || selectedTo === null) {
+    document.getElementById('sp-result').innerHTML = '<div class="alert danger">Select source and destination nodes.</div>';
+    return;
+  }
+  const filter = +document.getElementById('sp-filter').value;
+  const btn = document.getElementById('btn-shortest');
+  btn.innerHTML = '<span class="spinner"></span>Computing…'; btn.disabled = true;
+
+  try {
+    const res = await api('/shortest-path', { from: selectedFrom, to: selectedTo, filter });
+    btn.innerHTML = '▶ Find Shortest Path'; btn.disabled = false;
+
+    if (!res.success) {
+      document.getElementById('sp-result').innerHTML = `<div class="alert danger">${res.error}</div>`;
+      return;
+    }
+
+    const out = res.output || '';
+    // Build path display
+    const pathIds = extractPathIDs(out);
+    let pathHtml = '';
+    if (pathIds.length > 0) {
+      highlightPath(pathIds, 'path-edge');
+      pathHtml = '<div class="path-display">' +
+        pathIds.map((id, i) =>
+          `<span class="path-node">[${id}] ${graphData.nodes.find(n=>n.id===id)?.location||id}</span>` +
+          (i < pathIds.length - 1 ? '<span class="path-arrow">→</span>' : '')
+        ).join('') + '</div>';
+    }
+
+    const hopMatch = out.match(/hops: (\d+)/);
+    const totalMatch = out.match(/total [\w]+: ([\d$,. ]+)/);
+    document.getElementById('sp-result').innerHTML =
+      (hopMatch ? `<div class="alert info">Hops: ${hopMatch[1]} &nbsp;|&nbsp; ${totalMatch?.[0] || ''}</div>` : '') +
+      pathHtml +
+      `<div class="output-box" style="margin-top:8px">${parseOutput(out)}</div>`;
+
+    log(`<span class="hi">SHORTEST PATH</span> [${selectedFrom}]→[${selectedTo}] filter=${filter==1?'latency':'cost'}`);
+    log(parseOutput(out));
+  } catch (e) {
+    btn.innerHTML = '▶ Find Shortest Path'; btn.disabled = false;
+    document.getElementById('sp-result').innerHTML = `<div class="alert danger">Cannot reach server. Is it running?</div>`;
+  }
+}
+
+// ================================================================
+// DIJKSTRA ALL
+// ================================================================
+async function runDijkstraAll() {
+  if (selectedSrc === null) {
+    document.getElementById('dij-result').innerHTML = '<div class="alert danger">Select a source node.</div>';
+    return;
+  }
+  const filter = +document.getElementById('dij-filter').value;
+
+  try {
+    const res = await api('/dijkstra-all', { src: selectedSrc, filter });
+    if (!res.success) {
+      document.getElementById('dij-result').innerHTML = `<div class="alert danger">${res.error}</div>`;
+      return;
+    }
+    document.getElementById('dij-result').innerHTML =
+      `<div class="output-box">${parseOutput(res.output)}</div>`;
+    log(`<span class="ok">DIJKSTRA ALL</span> src=[${selectedSrc}] filter=${filter==1?'latency':'cost'}`);
+    log(parseOutput(res.output));
+  } catch {
+    document.getElementById('dij-result').innerHTML = '<div class="alert danger">Cannot reach server.</div>';
+  }
+}
+
+// ================================================================
+// MST
+// ================================================================
+async function runMST(algo) {
+  const filter = +document.getElementById('mst-filter').value;
+  try {
+    const res = await api(`/mst/${algo}`, { filter });
+    if (!res.success) {
+      document.getElementById('mst-result').innerHTML = `<div class="alert danger">${res.error}</div>`;
+      return;
+    }
+    const out = res.output || '';
+
+    // Parse MST edges from flat list output
+    const edgePairs = [];
+    // Target format: [10] <--> [11] weight: 15
+    const re = /\[(\d+)\] <--> \[(\d+)\]/g;
+    let m;
+    while ((m = re.exec(out)) !== null) {
+      edgePairs.push([+m[1], +m[2]]);
+    }
+    if (edgePairs.length > 0) highlightMSTEdges(edgePairs);
+
+    const totalMatch = out.match(/total MST [\w ]+: [\$]?([\d]+)/);
+    const label = algo === 'prim' ? "Prim's" : "Kruskal's";
+    document.getElementById('mst-result').innerHTML =
+      (totalMatch ? `<div class="alert success">${label} MST Total: ${totalMatch[0]}</div>` : '') +
+      `<div class="output-box" style="margin-top:8px">${parseOutput(out)}</div>`;
+
+    log(`<span class="hi">MST ${algo.toUpperCase()}</span> filter=${filter==1?'latency':'cost'}`);
+    log(parseOutput(out));
+  } catch {
+    document.getElementById('mst-result').innerHTML = '<div class="alert danger">Cannot reach server.</div>';
+  }
+}
+
+async function runMSTCompare() {
+  const filter = +document.getElementById('mst-filter').value;
+  try {
+    const [primRes, kruskalRes] = await Promise.all([
+      api('/mst/prim', { filter }),
+      api('/mst/kruskal', { filter })
+    ]);
+
+    const pOut = primRes.output || '';
+    const kOut = kruskalRes.output || '';
+
+    const pMatch = pOut.match(/total MST [\w ]+: [\$]?([\d]+)/);
+    const kMatch = kOut.match(/total MST [\w ]+: [\$]?([\d]+)/);
+    const pVal = pMatch ? +pMatch[1] : null;
+    const kVal = kMatch ? +kMatch[1] : null;
+
+    let comparison = '';
+    if (pVal !== null && kVal !== null) {
+      const same = pVal === kVal;
+      comparison = `
+        <div class="stats-row" style="margin-top:6px">
+          <div class="info-card">
+            <div class="info-card-title">Prim</div>
+            <div style="color:var(--accent2);font-size:.9rem;font-weight:700">${pVal.toLocaleString()}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Kruskal</div>
+            <div style="color:var(--accent);font-size:.9rem;font-weight:700">${kVal.toLocaleString()}</div>
+          </div>
+        </div>
+        <div class="alert ${same ? 'success' : 'info'}" style="margin-top:6px">
+          ${same ? '✓ Both produce identical MST' : `Difference: ${Math.abs(pVal - kVal).toLocaleString()}`}
+        </div>
+      `;
+    }
+
+    document.getElementById('mst-result').innerHTML = comparison +
+      `<div class="output-box" style="margin-top:8px">--- PRIM ---\n${parseOutput(pOut)}\n--- KRUSKAL ---\n${parseOutput(kOut)}</div>`;
+
+    log(`<span class="warn">MST COMPARE</span> filter=${filter==1?'latency':'cost'}`);
+  } catch {
+    document.getElementById('mst-result').innerHTML = '<div class="alert danger">Cannot reach server.</div>';
+  }
+}
+
+// ================================================================
+// GRAPH EDITING (PERSISTENT)
+// ================================================================
+function showEditResult(msg, type='info') {
+  document.getElementById('graph-edit-result').innerHTML = `<div class="alert ${type}">${msg}</div>`;
+  setTimeout(() => { document.getElementById('graph-edit-result').innerHTML = ''; }, 3000);
+}
+
+async function syncWithBackend() {
+  try {
+    const cleanData = {
+      nodes: graphData.nodes.map(n => ({ id: n.id, location: n.location })),
+      links: graphData.links.map(l => ({
+        source: l.source?.id ?? l.source,
+        target: l.target?.id ?? l.target,
+        latency_ms: l.latency_ms,
+        cost_usd: l.cost_usd
+      }))
+    };
+    const res = await api('/save-data', cleanData);
+    if (res.success) {
+      console.log('Data synced with server successfully.');
+    } else {
+      console.error('Failed to sync data:', res.error);
+      showEditResult('Failed to save to server: ' + res.error, 'danger');
+    }
+  } catch (err) {
+    console.error('Sync error:', err);
+    showEditResult('Cannot reach server for saving.', 'danger');
+  }
+}
+
+async function addNode() {
+  const idInput = document.getElementById('add-node-id');
+  const nameInput = document.getElementById('add-node-name');
+  const id = +idInput.value;
+  const name = nameInput.value.trim();
+  
+  if (!name || isNaN(id)) return showEditResult('Enter valid ID and name.', 'danger');
+  if (graphData.nodes.find(n => n.id === id)) return showEditResult(`Node ${id} already exists.`, 'danger');
+  
+  graphData.nodes.push({ id, location: name });
+  idInput.value = ''; nameInput.value = '';
+  
+  initGraph(); 
+  buildNodeLists(); 
+  updateStats();
+  await syncWithBackend();
+  showEditResult(`Node [${id}] ${name} added and saved.`, 'success');
+  log(`<span class="ok">ADDED NODE</span> [${id}] ${name}`);
+}
+
+async function addEdge() {
+  const fromInput = document.getElementById('add-edge-from');
+  const toInput = document.getElementById('add-edge-to');
+  const latInput = document.getElementById('add-edge-latency');
+  const costInput = document.getElementById('add-edge-cost');
+  
+  const from = +fromInput.value;
+  const to   = +toInput.value;
+  const lat  = +latInput.value;
+  const cost = +costInput.value;
+  
+  if (isNaN(from)||isNaN(to)||isNaN(lat)||isNaN(cost)) return showEditResult('Fill all fields.', 'danger');
+  if (from === to) return showEditResult('Self-loops not allowed.', 'danger');
+  if (!graphData.nodes.find(n=>n.id===from) || !graphData.nodes.find(n=>n.id===to))
+    return showEditResult('One or both nodes not found.', 'danger');
+    
+  const exists = graphData.links.find(l =>
+    (l.source===from&&l.target===to)||(l.source===to&&l.target===from)||(l.source?.id===from&&l.target?.id===to)||(l.source?.id===to&&l.target?.id===from));
+  if (exists) return showEditResult('Edge already exists.', 'danger');
+  
+  graphData.links.push({ source: from, target: to, latency_ms: lat, cost_usd: cost });
+  initGraph(); buildNodeLists(); updateStats();
+  await syncWithBackend();
+  showEditResult(`Edge [${from}]↔[${to}] added and saved.`, 'success');
+  log(`<span class="ok">ADDED EDGE</span> [${from}]↔[${to}]`);
+}
+
+async function deleteNode() {
+  const idInput = document.getElementById('del-node-id');
+  const id = +idInput.value;
+  if (!graphData.nodes.find(n=>n.id===id)) return showEditResult(`Node ${id} not found.`, 'danger');
+  
+  graphData.nodes = graphData.nodes.filter(n => n.id !== id);
+  graphData.links = graphData.links.filter(l => {
+    const s = l.source.id ?? l.source;
+    const t = l.target.id ?? l.target;
+    return s !== id && t !== id;
+  });
+  
+  idInput.value = '';
+  initGraph(); buildNodeLists(); updateStats();
+  await syncWithBackend();
+  showEditResult(`Node [${id}] deleted and saved.`, 'success');
+  log(`<span class="danger">DELETED NODE</span> [${id}]`);
+}
+
+async function deleteEdge() {
+  const fromInput = document.getElementById('del-edge-from');
+  const toInput = document.getElementById('del-edge-to');
+  const from = +fromInput.value;
+  const to   = +toInput.value;
+  
+  const before = graphData.links.length;
+  graphData.links = graphData.links.filter(l => {
+    const s = l.source.id ?? l.source;
+    const t = l.target.id ?? l.target;
+    return !((s===from&&t===to)||(s===to&&t===from));
+  });
+  
+  if (graphData.links.length === before) return showEditResult('Edge not found.', 'danger');
+  
+  fromInput.value = ''; toInput.value = '';
+  initGraph(); buildNodeLists(); updateStats();
+  await syncWithBackend();
+  showEditResult(`Edge [${from}]↔[${to}] deleted and saved.`, 'success');
+  log(`<span class="danger">DELETED EDGE</span> [${from}]↔[${to}]`);
+}
+
+// ================================================================
+// BOOT
+// ================================================================
+window.addEventListener('load', () => {
+  checkServer();
+  loadGraphData();
+  setInterval(checkServer, 10000);
+});
+
+window.addEventListener('resize', () => {
+  if (svgEl) {
+    const c = document.getElementById('graph-container');
+    svgEl.attr('width', c.clientWidth).attr('height', c.clientHeight);
+    if (simulation) simulation.force('center', d3.forceCenter(c.clientWidth/2, c.clientHeight/2)).alpha(.3).restart();
+  }
+});
+</script>
+</body>
+</html>
