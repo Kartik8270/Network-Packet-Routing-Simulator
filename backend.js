@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+
 const app = express();
 const PORT = 5002;
 
@@ -12,12 +13,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+
 // Helper function to execute C++ program
 function executeCpp(args) {
     return new Promise((resolve, reject) => {
         const isWindows = process.platform === 'win32';
         const binary = isWindows ? 'main.exe' : './network_main';
         const command = `${binary} ${args}`;
+
 
         exec(command, { cwd: __dirname }, (error, stdout, stderr) => {
             if (error) {
@@ -49,6 +52,7 @@ app.post('/shortest-path', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.error || 'Internal server error'
+
         });
     }
 });
@@ -71,6 +75,7 @@ app.post('/dijkstra-all', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.error || 'Internal server error'
+
         });
     }
 });
@@ -93,6 +98,7 @@ app.post('/mst/prim', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.error || 'Internal server error'
+
         });
     }
 });
@@ -135,12 +141,14 @@ app.post('/save-data', (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+
     }
 });
 
 // Serve the frontend
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+
 });
 
 // Start server
@@ -152,4 +160,5 @@ app.listen(PORT, () => {
     console.log('  POST /mst/prim');
     console.log('  POST /mst/kruskal');
     console.log('  POST /save-data');
+
 });
