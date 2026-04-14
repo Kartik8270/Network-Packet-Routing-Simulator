@@ -3,30 +3,27 @@
 #include <tuple>
 #include <unordered_map>
 #include <fstream>
+#include <string>
 #include "json.hpp"
 #include "utils.h"
 #include "shortest_path.h"
 #include "mst.h"
 using namespace std;
 using json = nlohmann::json;
-#define int long long
 
-int32_t main() {
-
+void loadData(json &networkData, unordered_map<long long, string> &nodeName, 
+              unordered_map<long long, vector<tuple<long long, long long, long long>>> &AdjacencyList,
+              long long &nodesSize, long long &edgesSize) {
     ifstream inFile("Data.json");
     if (!inFile.is_open()) {
         cerr << "could not open Data.json\n";
-        return 1;
+        exit(1);
     }
-    json networkData;
     inFile >> networkData;
     inFile.close();
 
-    long long nodesSize = networkData["nodes"].size();
-    long long edgesSize = networkData["links"].size();
-
-    unordered_map<long long, string> nodeName;
-    vector<tuple<long long, long long, long long>> mst;
+    nodesSize = networkData["nodes"].size();
+    edgesSize = networkData["links"].size();
 
     for (auto &x : networkData["nodes"]) {
         long long id    = x["id"];
@@ -34,7 +31,6 @@ int32_t main() {
         nodeName[id]    = location;
     }
 
-    unordered_map<long long, vector<tuple<long long, long long, long long>>> AdjacencyList;
     for (int i = 0; i < edgesSize; i++) {
         long long from    = networkData["links"][i]["source"];
         long long to      = networkData["links"][i]["target"];
@@ -43,7 +39,69 @@ int32_t main() {
         AdjacencyList[from].push_back({to,   latency, cost});
         AdjacencyList[to].push_back({from, latency, cost});
     }
+}
 
+int main(int argc, char* argv[]) {
+    
+    // Load data
+    json networkData;
+    unordered_map<long long, string> nodeName;
+    unordered_map<long long, vector<tuple<long long, long long, long long>>> AdjacencyList;
+    long long nodesSize, edgesSize;
+    
+    loadData(networkData, nodeName, AdjacencyList, nodesSize, edgesSize);
+    vector<tuple<long long, long long, long long>> mst;
+
+    // Command-line mode
+    if (argc > 1) {
+        string mode = argv[1];
+        
+        if (mode == "shortest" && argc == 5) {
+            long long from = stoll(argv[2]);
+            long long to = stoll(argv[3]);
+            int filter = stoi(argv[4]);
+            
+            if (!validNode(from, nodeName) || !validNode(to, nodeName)) {
+                cerr << "invalid source or destination\n";
+                return 1;
+            }
+            if (from == to) {
+                cerr << "source and destination are the same\n";
+                return 1;
+            }
+            shortestPathForOne(from, to, AdjacencyList, filter, nodeName);
+        }
+        else if (mode == "dijkstra_all" && argc == 4) {
+            long long src = stoll(argv[2]);
+            int filter = stoi(argv[3]);
+            
+            if (!validNode(src, nodeName)) {
+                cerr << "invalid source node\n";
+                return 1;
+            }
+            unordered_map<long long, long long> dist = dijkstraForAll(nodeName, AdjacencyList, src, filter);
+            printDijkstraResult(dist, nodeName, src, filter);
+        }
+        else if (mode == "mst_prim" && argc == 3) {
+            int filter = stoi(argv[2]);
+            mst = Prim(AdjacencyList, filter, true, nodeName, true);
+        }
+        else if (mode == "mst_kruskal" && argc == 3) {
+            int filter = stoi(argv[2]);
+            mst = Kruskal(AdjacencyList, filter, true, nodeName, true);
+        }
+        else {
+            cerr << "Usage:\n";
+            cerr << "  " << argv[0] << " shortest <from> <to> <filter>\n";
+            cerr << "  " << argv[0] << " dijkstra_all <src> <filter>\n";
+            cerr << "  " << argv[0] << " mst_prim <filter>\n";
+            cerr << "  " << argv[0] << " mst_kruskal <filter>\n";
+            return 1;
+        }
+        return 0;
+    }
+
+    // CLI mode (original functionality)
     cout << "loaded " << nodesSize << " nodes, " << edgesSize << " links\n";
 
     int n = 0;

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Packet Routing Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Network Packet Routing Simulator</h1>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Controls -->
+            <section class="left-panel">
+                <h2>Algorithm Controls</h2>
+                
+                <div class="control-section path-section">
+                    <h3>Shortest Path</h3>
+                    <div class="input-group">
+                        <label for="sp-from">From Node ID:</label>
+                        <input type="number" id="sp-from" placeholder="e.g., 0">
+                    </div>
+                    <div class="input-group">
+                        <label for="sp-to">To Node ID:</label>
+                        <input type="number" id="sp-to" placeholder="e.g., 1">
+                    </div>
+                    <div class="input-group">
+                        <label for="sp-filter">Filter:</label>
+                        <select id="sp-filter">
+                            <option value="1">Latency (ms)</option>
+                            <option value="2">Cost (USD)</option>
+                        </select>
+                    </div>
+                    <button onclick="runShortestPath()">Find Path</button>
+                </div>
+
+                <div class="control-section path-section">
+                    <h3>Dijkstra All Paths</h3>
+                    <div class="input-group">
+                        <label for="dijkstra-src">Source Node ID:</label>
+                        <input type="number" id="dijkstra-src" placeholder="e.g., 0">
+                    </div>
+                    <div class="input-group">
+                        <label for="dijkstra-filter">Filter:</label>
+                        <select id="dijkstra-filter">
+                            <option value="1">Latency (ms)</option>
+                            <option value="2">Cost (USD)</option>
+                        </select>
+                    </div>
+                    <button onclick="runDijkstraAll()">Run Dijkstra</button>
+                </div>
+
+                <div class="control-section mst-section">
+                    <h3>Minimum Spanning Tree</h3>
+                    <div class="input-group">
+                        <label for="mst-filter">Filter:</label>
+                        <select id="mst-filter">
+                            <option value="1">Latency (ms)</option>
+                            <option value="2">Cost (USD)</option>
+                        </select>
+                    </div>
+                    <div class="button-group">
+                        <button onclick="runMSTPrim()">Prim's Algorithm</button>
+                        <button onclick="runMSTKruskal()">Kruskal's Algorithm</button>
+                    </div>
+                </div>
+
+                <div class="control-section edit-section">
+                    <h3>Graph Editing</h3>
+                    
+                    <!-- Add Node -->
+                    <div class="input-group">
+                        <label for="add-node-id">Node ID:</label>
+                        <input type="number" id="add-node-id" placeholder="e.g., 30">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-node-name">Node Name:</label>
+                        <input type="text" id="add-node-name" placeholder="e.g., New York">
+                    </div>
+                    <button onclick="addNode()" class="edit-btn">Add Node</button>
+                    
+                    <!-- Delete Node -->
+                    <div class="input-group">
+                        <label for="delete-node-id">Node ID:</label>
+                        <input type="number" id="delete-node-id" placeholder="e.g., 30">
+                    </div>
+                    <button onclick="deleteNode()" class="edit-btn delete-btn">Delete Node</button>
+                    
+                    <!-- Add Edge -->
+                    <div class="input-group">
+                        <label for="add-edge-from">From Node ID:</label>
+                        <input type="number" id="add-edge-from" placeholder="e.g., 0">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-edge-to">To Node ID:</label>
+                        <input type="number" id="add-edge-to" placeholder="e.g., 1">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-edge-latency">Latency (ms):</label>
+                        <input type="number" id="add-edge-latency" placeholder="e.g., 50">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-edge-cost">Cost (USD):</label>
+                        <input type="number" id="add-edge-cost" placeholder="e.g., 1000">
+                    </div>
+                    <button onclick="addEdge()" class="edit-btn">Add Edge</button>
+                    
+                    <!-- Delete Edge -->
+                    <div class="input-group">
+                        <label for="delete-edge-from">From Node ID:</label>
+                        <input type="number" id="delete-edge-from" placeholder="e.g., 0">
+                    </div>
+                    <div class="input-group">
+                        <label for="delete-edge-to">To Node ID:</label>
+                        <input type="number" id="delete-edge-to" placeholder="e.g., 1">
+                    </div>
+                    <button onclick="deleteEdge()" class="edit-btn delete-btn">Delete Edge</button>
+                </div>
+
+                <div class="control-section compare-section">
+                    <h3>MST vs Dijkstra Comparison</h3>
+                    <div class="input-group">
+                        <label for="compare-from">From Node ID:</label>
+                        <input type="number" id="compare-from" placeholder="e.g., 0">
+                    </div>
+                    <div class="input-group">
+                        <label for="compare-to">To Node ID:</label>
+                        <input type="number" id="compare-to" placeholder="e.g., 1">
+                    </div>
+                    <div class="input-group">
+                        <label for="compare-filter">Filter:</label>
+                        <select id="compare-filter">
+                            <option value="1">Latency (ms)</option>
+                            <option value="2">Cost (USD)</option>
+                        </select>
+                    </div>
+                    <button onclick="runComparison()" class="compare-btn">Compare MST vs Dijkstra</button>
+                </div>
+
+                <div class="control-section">
+                    <button onclick="loadGraph()" class="load-btn">Load Graph Data</button>
+                </div>
+            </section>
+
+            <!-- Center Panel - Graph Visualization -->
+            <section class="center-panel">
+                <h2>Network Graph</h2>
+                <div id="graph-container">
+                    <svg id="graph-svg"></svg>
+                    <div class="zoom-controls">
+                        <button onclick="zoomIn()">+</button>
+                        <button onclick="zoomOut()">-</button>
+                        <button onclick="resetZoom()">Reset</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel - Output -->
+            <section class="right-panel">
+                <h2>Algorithm Output</h2>
+                <div id="output-container">
+                    <div class="terminal-header">
+                        <div class="terminal-dot red"></div>
+                        <div class="terminal-dot yellow"></div>
+                        <div class="terminal-dot green"></div>
+                    </div>
+                    <div id="output-content">Output will appear here...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

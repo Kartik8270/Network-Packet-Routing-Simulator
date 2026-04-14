@@ -1,3 +1,38 @@
+# dependencies
+node_modules/
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# environment variables
+.env
+.env.*
+
+# build output
+dist/
+build/
+
+# OS files
 .DS_Store
-main
-*.exe
+Thumbs.db
+
+# editor files
+.vscode/
+.idea/
+
+# temporary files
+*.tmp
+*.temp
+
+# coverage
+coverage/
+
+# cache
+.cache/
+
+# package lock (optional but usually KEEP it)
+# package-lock.json
