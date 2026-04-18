@@ -143,13 +143,14 @@ This uses nodemon to automatically restart the server when files change.
 
 ### Building the C++ Executable
 
-```bash
-# For development
-g++ -std=c++17 -g main.cpp shortest_path.cpp mst.cpp utils.cpp -o main.exe
+# Project Source Files
+FILES="main.cpp shortest_path.cpp mst.cpp utils.cpp"
 
-# For production
-g++ -std=c++17 -O2 main.cpp shortest_path.cpp mst.cpp utils.cpp -o main.exe
-```
+# [Development] Build with debug symbols
+g++ -std=c++17 -g $FILES -o main.exe
+
+# [Production] Build with speed optimizations
+g++ -std=c++17 -O3 $FILES -o main.exe
 
 ## Important Notes
 
