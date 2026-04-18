@@ -1,4 +1,4 @@
-# Network Packet Routing Simulator
+# A Network Packet Routing Simulator
 
 A web-based visual application for network packet routing algorithms implemented in C++ with a Node.js backend and HTML/JavaScript frontend.
 
