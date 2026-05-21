@@ -6,7 +6,7 @@ A web-based interactive application for visualizing and comparing network packet
 
 ## 📸 Overview
 
-![NetRoute Main Interface](screenshots/main_ui.png)
+![NetRoute Main Interface](screenshots/main.png)
 *NetRoute — 30-node global topology with real-time algorithm visualization*
 
 ---
